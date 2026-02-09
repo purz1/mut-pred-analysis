@@ -1,4 +1,4 @@
-# 📄Mutation prediction project
+# 📄Mutation prediction in AML
 
 This repository contains the code used to analyze cytomorphology data in the manuscript: 
 
@@ -8,7 +8,7 @@ This repository contains the code used to analyze cytomorphology data in the man
 
 ## Dependencies
 
-Create conda environment and install dependencies:
+Create environment and install dependencies:
 
 ```bash
 uv install

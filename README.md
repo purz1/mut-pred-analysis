@@ -1,4 +1,4 @@
-# 📄Mutation prediction in AML
+# 📄Mutation prediction in AML - Data analysis
 
 This repository contains the code used to analyze cytomorphology data in the manuscript: 
 

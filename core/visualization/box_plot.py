@@ -28,7 +28,7 @@ def plot_covariate_distributions(
     point_size: int = 3,
     show_trend_line: bool = False,
     save_path: Optional[str] = None
-) -> None:
+) -> "plt.Figure":
     """
     Plot boxplots and stripplots of covariate distributions across classes of a predicted variable,
     with annotated p-values from Wilcoxon rank-sum tests.
@@ -154,6 +154,4 @@ def plot_covariate_distributions(
         ax.axis('off')
 
     plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, format='png', dpi=300, bbox_inches='tight')
-    plt.show()
+    return fig

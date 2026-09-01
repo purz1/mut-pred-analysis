@@ -25,7 +25,7 @@ def plot_kaplan_meier_curves(
     figsize: Tuple[float, float] = (3, 2.5),
     save_path: Optional[Union[str, Path]] = None,
     max_p_value_to_plot = None,
-) -> None:
+) -> plt.Figure:
 
     df = df.copy()
 
@@ -145,15 +145,8 @@ def plot_kaplan_meier_curves(
     if title:
         ax.set_title(title, fontsize=fontsize, fontweight="bold")
 
-    if max_p_value_to_plot is None:
-        if save_path:
-            plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        plt.show()
+    if max_p_value_to_plot is not None and stats.p_value > max_p_value_to_plot:
+        plt.close()
+        return fig
 
-    if max_p_value_to_plot is not None:
-        if stats.p_value <= max_p_value_to_plot:
-            if save_path:
-                plt.savefig(save_path, dpi=300, bbox_inches="tight")
-            plt.show()
-        else:
-            plt.close()
+    return fig

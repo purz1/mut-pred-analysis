@@ -140,3 +140,9 @@ dmypy.json
 
 # figures
 /figures
+
+# project export zips
+/project_zips
+
+# auto-generated R path config (machine-specific absolute paths)
+eln_run_config.R

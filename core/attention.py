@@ -189,7 +189,9 @@ def compute_attention_mass_summary(
 # ── Top-level analysis functions ──────────────────────────────────────────────
 
 
-def compute_celltype_mass_bins(df, target_variables, ct_names, n_bins=10, subset=None, cell_groups=None):
+def compute_celltype_mass_bins(
+    df, target_variables, ct_names, n_bins=10, subset=None, cell_groups=None
+):
     """Assign cells to attention-mass decile bins, return mean cell-type proportions per bin.
 
     subset: None = all bags, 'pred_pos', 'pred_neg'
@@ -239,9 +241,7 @@ def compute_celltype_mass_bins(df, target_variables, ct_names, n_bins=10, subset
             col_sums[col_sums == 0] = 1
             bag_mats.append(mat / col_sums)
         mean_mat = (
-            np.stack(bag_mats).mean(axis=0)
-            if bag_mats
-            else np.zeros((n_rows, n_bins))
+            np.stack(bag_mats).mean(axis=0) if bag_mats else np.zeros((n_rows, n_bins))
         )
         result[variable] = pd.DataFrame(
             mean_mat, index=row_names, columns=range(1, n_bins + 1)
@@ -270,7 +270,11 @@ def plot_celltype_mass_bins(
         ct_names = [ct for ct in ct_names if ct in ct_to_label]
         ct_names_set = set(ct_names)
         plot_groups = [
-            (label, group_colors.get(label, "gray"), [ct for ct in cts if ct in ct_names_set])
+            (
+                label,
+                group_colors.get(label, "gray"),
+                [ct for ct in cts if ct in ct_names_set],
+            )
             for label, cts in cell_groups.items()
             if any(ct in ct_names_set for ct in cts)
         ]
@@ -282,7 +286,10 @@ def plot_celltype_mass_bins(
         legend_colors = colors
         legend_labels = [get_readable_variable_name(ct) for ct in ct_names]
     fig, axes = plt.subplots(
-        n_rows, n_cols, figsize=figsize or (n_cols * 2.5, n_rows * 2.8), squeeze=False,
+        n_rows,
+        n_cols,
+        figsize=figsize or (n_cols * 2.5, n_rows * 2.8),
+        squeeze=False,
         layout="constrained",
     )
     if hspace is not None or wspace is not None:
@@ -301,7 +308,9 @@ def plot_celltype_mass_bins(
             )
         else:
             ax.stackplot(
-                data.columns, [data.loc[ct].to_numpy() for ct in ct_names], colors=colors
+                data.columns,
+                [data.loc[ct].to_numpy() for ct in ct_names],
+                colors=colors,
             )
         ax.set_title(get_readable_variable_name(variable), fontsize=utils.FONTSIZE - 1)
         ax.set_ylabel("Cells (%)", fontsize=utils.FONTSIZE - 1, labelpad=2)
@@ -344,6 +353,10 @@ def plot_heatmap(
     center=None,
     figsize=None,
     figure_type=None,
+    cell_groups=None,
+    group_colors=None,
+    strip_pts=6,
+    strip_gap_pts=1,
 ):
     """Plot one heatmap figure per entry in `panels` (list of (DataFrame, title_str))."""
     vmin = min(m.min().min() for m, _ in panels) if center is not None else 0
@@ -398,6 +411,37 @@ def plot_heatmap(
             label.set_rotation_mode("anchor")
         ax.tick_params(axis="y", rotation=0, labelsize=utils.FONTSIZE - 1, length=0)
         ax.set_xlabel("")
+        if cell_groups is not None and group_colors is not None:
+            from matplotlib.transforms import blended_transform_factory
+            from matplotlib.patches import Rectangle as MplRect
+
+            ct_to_color = {
+                ct: group_colors[label]
+                for label, cts in cell_groups.items()
+                for ct in cts
+            }
+            readable_to_color = {
+                get_readable_variable_name(ct): c for ct, c in ct_to_color.items()
+            }
+            fig_h_pts = fig.get_size_inches()[1] * 72
+            strip_h = strip_pts / fig_h_pts
+            gap_h = strip_gap_pts / fig_h_pts
+            trans = blended_transform_factory(ax.transData, ax.transAxes)
+            for i, col in enumerate(data.columns):
+                color = readable_to_color.get(col)
+                if color:
+                    ax.add_patch(
+                        MplRect(
+                            (i, -(strip_h + gap_h)),
+                            1.0,
+                            strip_h,
+                            transform=trans,
+                            facecolor=color,
+                            edgecolor="none",
+                            clip_on=False,
+                            zorder=2,
+                        )
+                    )
         plt.tight_layout()
         save_and_show(fig, title=title, figure_type=figure_type)
 
@@ -410,6 +454,8 @@ def plot_importance_heatmaps(
     figure_type=None,
     title_pred_pos="Cell type importance in \npositive predictive samples",
     title_pred_neg="Cell type importance in \nnegative predictive samples",
+    cell_groups=None,
+    group_colors=None,
 ):
     """Log(R) heatmaps for predicted-positive and predicted-negative subsets."""
     logR_pred_pos = compute_logR_summary(
@@ -429,6 +475,8 @@ def plot_importance_heatmaps(
         annotate_positive_values=False,
         figsize=figsize,
         figure_type=figure_type,
+        cell_groups=cell_groups,
+        group_colors=group_colors,
     )
 
 

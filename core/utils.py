@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import shutil
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -103,6 +104,43 @@ def add_confusion_categories(
         ]
         df = df.drop(columns=drop_cols)
     return df
+
+
+def load_or_cache(
+    external_path: str | Path,
+    cache_dir: str | Path = "data/source_data_from_academic",
+    local_name: str | None = None,
+) -> pd.DataFrame:
+    """Load a data file from the local cache, copying from an external path on first access.
+
+    On the first call the file is copied from *external_path* into *cache_dir*
+    so that all subsequent runs read the repo-local copy — keeping analyses
+    reproducible even if the external source changes.
+
+    Raises ``FileNotFoundError`` if the cache is empty AND the external path
+    is not reachable (e.g. the mount is unavailable in this environment).
+    """
+    local_path = Path(cache_dir) / (local_name or Path(external_path).name)
+    if not local_path.exists():
+        ext = Path(external_path)
+        if not ext.exists():
+            raise FileNotFoundError(
+                f"Cache miss and external path not accessible:\n  {external_path}\n"
+                "Run this notebook from the environment where the academic data is mounted."
+            )
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ext, local_path)
+        print(f"Cached: {local_path}")
+
+    suffix = local_path.suffix.lower()
+    if suffix == ".csv":
+        return pd.read_csv(local_path)
+    elif suffix in (".xlsx", ".xls"):
+        return pd.read_excel(local_path)
+    elif suffix == ".parquet":
+        return pd.read_parquet(local_path)
+    else:
+        raise ValueError(f"Unsupported file format for load_or_cache: {suffix}")
 
 
 def get_readable_variable_name(target: str) -> str:

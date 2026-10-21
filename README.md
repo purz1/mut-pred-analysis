@@ -46,7 +46,6 @@ The models themselves live in a separate `aml-mil` repository. This repo contain
 │       ├── survival/               # Survival outcome data
 │       ├── vaf/                    # Variant allele frequency data
 │       ├── eln/                    # ELN pipeline folders (r_input/, r_output/)
-│       ├── morphology_features/    # Aggregated feature CSVs, cell-level parquets, H5, label XLSX
 │       └── model_predictions/      # Model run outputs (imported via 4_import_predictions.py)
 │           └── AML_V15_OPTIMIZED_PARAMETERS/multilabel/scemila/
 │               ├── BM/All cells/run_.../   # predictions.csv, metrics, fold_*/cell_attention_scores.csv
@@ -120,6 +119,8 @@ Key settings:
 |---|---|
 | `USE_DUMMY_DATA` | `True` → all data paths resolve to `_DUMMY` companion files |
 | `DATA_VERSION_IDENTIFIER` | Date string used in folder names and filenames (e.g. `"03-06-2026"`); change to save a new data version |
+| `FEATURE_VERSION` | Version of the image-derived features (e.g. `"07-04-2026"`): the cohort/label selection hematoscope-research generated them from. Separate from `DATA_VERSION_IDENTIFIER` |
+| `SHARED_DATA_DIR`, `TRAINING_FEATURES_DIR`, `VENEX_FEATURES_DIR`, `SWEDEN_FEATURES_DIR`, `HEHR_FEATURES_DIR` | Shared feature folders in `2-mut-pred/data/` (override with the `MUT_PRED_DATA_DIR` environment variable) |
 | `SAVE_FILES` | `True` → notebook 1 writes output files; skips if file already exists |
 | `BM_RUN_PATH` / `PB_RUN_PATH` / `FUSION_RUN_PATH` | Paths to model prediction run directories under `data/{V}/model_predictions/` |
 | `SELECTED_VARIABLES` | Canonical list of 17 mutation/cytogenetic targets |
@@ -142,11 +143,25 @@ data/{DATA_VERSION_IDENTIFIER}/
 ├── survival/               # Survival outcomes (time to death, treatment groups)
 ├── vaf/                    # Variant allele frequency values per gene
 ├── eln/                    # ELN pipeline input/output (r_input/, r_output/)
-├── morphology_features/    # Aggregated feature CSVs, cell-level parquets, H5, label XLSX
 └── model_predictions/      # Model run outputs (imported via 4_import_predictions.py)
 ```
 
-Each data subfolder contains:
+### Shared feature data (`2-mut-pred/data/`)
+
+The image-derived files are no longer copied into this repository. They live in the project's shared data folder next to the repositories, where hematoscope-research writes them (`scripts/mut_pred/`) and aml-mil also reads them:
+
+```
+2-mut-pred/
+├── aml-mil/
+├── mut-pred-analysis/       this repository
+└── data/
+    ├── aml_dg_de-novo-and-secondary-{FEATURE_VERSION}/   study cohort: H5, labels, label map, aggregated CSVs, cell-level parquets
+    ├── venex_bm-{FEATURE_VERSION}/                         Helsinki venetoclax cohort: H5, sample sheet, aggregated CSV
+    ├── sweden_bm-{FEATURE_VERSION}/                        Sweden cohort: H5, sample sheet, aggregated CSV
+    └── hehr_aml/                                           Hehr AML PB: H5, labels, aggregated CSV
+```
+
+Each data subfolder of `data/{DATA_VERSION_IDENTIFIER}/` contains:
 - **Real files** — patient data, present only in the data environment
 - **`_DUMMY` files** — synthetic 30-patient versions committed to the repo
 

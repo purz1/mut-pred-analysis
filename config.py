@@ -1,3 +1,4 @@
+import os as _os
 from pathlib import Path as _Path
 
 # ── Global flags ───────────────────────────────────────────────────────────────
@@ -7,6 +8,20 @@ USE_DUMMY_DATA = False
 # Used in both folder names and filenames. Change this when regenerating data.
 DATA_VERSION_IDENTIFIER = "03-06-2026"
 SAVE_FILES = True
+
+# ── Shared image-derived data ──────────────────────────────────────────────────
+# Written by hematoscope-research into 2-mut-pred/data (next to this repository) and
+# also read by aml-mil. Set MUT_PRED_DATA_DIR to use another location.
+# FEATURE_VERSION is the cohort/label version the features were generated from; it is
+# separate from DATA_VERSION_IDENTIFIER (this repository's analysis data version).
+FEATURE_VERSION = "07-04-2026"
+SHARED_DATA_DIR = _Path(
+    _os.environ.get("MUT_PRED_DATA_DIR", _Path(__file__).resolve().parent.parent / "data")
+)
+TRAINING_FEATURES_DIR = SHARED_DATA_DIR / f"aml_dg_de-novo-and-secondary-{FEATURE_VERSION}"
+VENEX_FEATURES_DIR    = SHARED_DATA_DIR / f"venex_bm-{FEATURE_VERSION}"
+SWEDEN_FEATURES_DIR   = SHARED_DATA_DIR / f"sweden_bm-{FEATURE_VERSION}"
+HEHR_FEATURES_DIR     = SHARED_DATA_DIR / "hehr_aml"
 
 
 def resolve_data_path(path: str) -> str:

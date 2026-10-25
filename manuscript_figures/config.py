@@ -11,6 +11,17 @@ FINGERPRINTS = DERIVED / "fig4_fingerprints"   # scripts/extract_fig4_fingerprin
 ERRORS = DERIVED / "error_analysis"            # scripts/extract_error_attention_cache.py, extract_error_outcome_stats.py
 AML_MIL_FIGS = REPO.parent / "aml-mil/results" / RUN / "figures"
 
+# Pixel size of the morphometry / cell-crop scale (µm per pixel). PLACEHOLDER — replace with the true values.
+# Morphometry px = BM at the 1232 × 1028 field resolution (2464-px fields are halved; see CROP_SCALE) and PB crops.
+# Rough estimate from PB red-cell diameter (≈ 45 px ≈ 7.5 µm). Areas only; ratios and Cliff's δ are unit-free.
+UM_PER_PX = {"BM": 0.17, "PB": 0.17}
+UM_PER_PX_PLACEHOLDER = True
+CROP_SCALE = {2464: 0.5, 1232: 1.0}  # BM field width (px) → factor to the morphometry scale
+
+CROPS = DERIVED / "cell_crops"                  # scripts/extract_cell_crops.py
+GALLERY = DERIVED / "gallery"                    # scripts/extract_gallery_cells.py (top cells, clusters, UMAP, tiles)
+TOP_CELLS = GALLERY / "top_cells.parquet"
+
 OUT = REPO / "figures/manuscript"
 DPI = 300
 
@@ -21,3 +32,10 @@ def save(fig, name):
     fig.savefig(OUT / f"{name}.png", dpi=DPI)
     fig.savefig(OUT / f"{name}.pdf")
     return fig
+
+
+def to_um(feature, mod):
+    """(factor, unit) to convert a morphometry value from pixels: areas → µm²; unit-free measures unchanged."""
+    if "area" in feature:
+        return UM_PER_PX[mod] ** 2, "µm²"
+    return 1.0, ""

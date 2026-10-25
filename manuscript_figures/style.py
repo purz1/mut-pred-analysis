@@ -49,6 +49,7 @@ FEAT_NAME = {"hypergranulated": "hypergranular", "bilobed": "bilobed nucleus", "
              "multinucleated": "separated nuclei", "hypolobated": "hypolobated nuclei", "apl_hypergranulated": "hypergranular",
              "neut_gran_normal": "normal granularity", "neut_gran_hypo": "hypogranular", "neut_gran_hyper": "hypergranular"}
 
+GROUP_COL = {"Neg": "#5b8cc0", "Pos": "#f0b08a", "Pos top": "#b2182b"}  # Neg / Pos / top-attention cells of Pos samples
 OUTS = ["TN", "FN", "FP", "TP"]
 OUT_COL = {"TN": "#3a6fb0", "FN": "#f39c34", "FP": "#d62728", "TP": "#8b1a1a"}
 

@@ -13,6 +13,9 @@ Outputs (git-ignored, under data/<DATA_VERSION_IDENTIFIER>/derived/fig4_fingerpr
     fingerprint_tags.csv  associated features only, with model-use status and feature family
     attention_enrichment.csv  cell type x variable attention log-enrichment (predicted positives)
     attention_spread.csv      N_eff / N per bag and variable
+    sample_features_all.parquet  per modality x sample: features re-aggregated from all cells
+    sample_features_top.parquet  per modality x variable x positive sample: features of the top-attention cells
+                                 (= the "Pos. (top cells)" group of the variable cards)
     run_info.json         inputs, parameters and status rules
 
 The loading / preprocessing / statistics code mirrors 11_cytomorphology_analysis.ipynb
@@ -125,7 +128,7 @@ def main():
     t0 = time.time()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    rows, enrich, spread = [], [], []
+    rows, enrich, spread, sf_all, sf_top = [], [], [], [], []
     for modality in ["BM", "PB"]:
         model = modality if ATTENTION_MODEL == "per_modality" else ATTENTION_MODEL
         print(f"[{modality}] loading attention scores ({model} model) …")
@@ -164,6 +167,7 @@ def main():
         print(f"[{modality}] aggregating all cells per sample …")
         samples = df[["database_id", "album_id"]].drop_duplicates()
         agg_all = preprocess(agg_fn(cell_df.merge(samples, on=["database_id", "album_id"])).reset_index(), modality)
+        sf_all.append(agg_all.assign(modality=modality))
 
         for var in SELECTED_VARIABLES:
             pos = df[df[var] == 1]
@@ -185,6 +189,7 @@ def main():
                 top_cells = cell_df.merge(top_ids, on=["database_id", "album_id", "cell_id"]).merge(pos_keys)
                 if len(top_cells):
                     top = preprocess(agg_fn(top_cells).reset_index(), modality)
+                    sf_top.append(top.assign(modality=modality, variable=var))
             pos_all = agg_all.merge(pos[["database_id", "album_id"]])
             neg_all = agg_all.merge(neg[["database_id", "album_id"]])
 
@@ -220,6 +225,8 @@ def main():
     res.to_csv(OUT_DIR / "feature_effects.csv", index=False)
     pd.concat(enrich).to_csv(OUT_DIR / "attention_enrichment.csv", index=False)
     pd.DataFrame(spread).to_csv(OUT_DIR / "attention_spread.csv", index=False)
+    pd.concat(sf_all, ignore_index=True).to_parquet(OUT_DIR / "sample_features_all.parquet")
+    pd.concat(sf_top, ignore_index=True).to_parquet(OUT_DIR / "sample_features_top.parquet")
 
     tags = res[res["associated"]].copy()
     tags["abs_delta"] = tags["delta_pos_vs_neg"].abs()

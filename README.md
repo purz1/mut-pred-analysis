@@ -26,7 +26,7 @@ The models themselves live in a separate `aml-mil` repository. This repo contain
 ├── core/                           # Shared Python utilities
 │   ├── utils.py                    # load_predictions, add_confusion_categories,
 │   │                               # load_or_cache, save_and_show, ...
-│   ├── dummy.py                    # generate_dummy_df, save_with_dummy
+│   ├── dummy.py                    # generate_dummy_df, save_with_dummy, make_toy_eln_data
 │   ├── attention.py                # Attention score loading and plotting
 │   ├── visualization/              # Kaplan-Meier, box plots, scatter plots
 │   ├── statistics/                 # Wilcoxon, statistical analysis
@@ -102,6 +102,8 @@ conda env update -f environment.yml --prune
 ```
 
 Set `USE_DUMMY_DATA = False` in `config.py` before running notebooks.
+
+`8_eln_risk_group_analysis.ipynb` can be tested without the patient data: set `USE_TOY_DATA = True` in its config cell. It writes a random cohort to `data/_temp_test/` (`core.dummy.make_toy_eln_data`) and saves the figures to `figures/_temp_test/`, so the real figures are not touched. The results are meaningless; set it back to `False` for real runs.
 
 ---
 

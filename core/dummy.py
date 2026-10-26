@@ -129,3 +129,54 @@ def save_with_dummy(
     dummy_p = _dummy_path(p)
     _save(dummy, dummy_p, **kwargs)
     print(f"Saved: {dummy_p}")
+
+
+def make_toy_eln_data(out_dir, variables, version, n=200, seed=42):
+    """Write a synthetic cohort for the ELN notebook (8_eln_risk_group_analysis) and return its paths.
+
+    Predictions, clinical, survival and VAF files plus the R output (TARGETS / TP ELN groups) for BM, PB and FUSION
+    with random content, for testing the plotting without the patient data. Existing files are reused; delete
+    *out_dir* to regenerate.
+    """
+    out_dir = Path(out_dir)
+    paths = dict(
+        runs={m: out_dir / f"run_{m}" for m in ("bm", "pb", "fusion")},
+        clinical={m: out_dir / f"clinical_{m}.csv" for m in ("bm", "pb")},
+        survival={m: out_dir / f"survival_{m}.xlsx" for m in ("bm", "pb")},
+        vaf=out_dir / "vaf_bm.xlsx",
+        r_output=out_dir / "r_output",
+    )
+    if out_dir.exists():
+        return paths
+    rng = np.random.default_rng(seed)
+    ids = dict(album_id=[f"ALB_{i:04d}" for i in range(n)], database_id=[str(i + 2000) for i in range(n)],
+               henkilotunnus=[f"DUMMY_{i:04d}" for i in range(n)])
+    out_dir.mkdir(parents=True)
+    for m in ("bm", "pb"):
+        pd.DataFrame(dict(album_id=ids["album_id"], year=ids["database_id"], henkilotunnus=ids["henkilotunnus"])
+                     ).to_csv(paths["clinical"][m], index=False)
+        pd.DataFrame(dict(**ids, cyto=True, time_dg_to_death=rng.uniform(30, 3000, n), died=rng.random(n) < 0.5)
+                     ).to_excel(paths["survival"][m], index=False)
+    pd.DataFrame(dict(henkilotunnus=ids["henkilotunnus"], NPM1=rng.uniform(0, 80, n), FLT3_ITD=rng.uniform(0, 40, n))
+                 ).to_excel(paths["vaf"], index=False)
+    for run in paths["runs"].values():
+        run.mkdir()
+        rows = dict(album_id=ids["album_id"], database_id=ids["database_id"])
+        for v in variables:
+            true = (rng.random(n) < 0.2).astype(int)
+            rows[f"{v}_true_label"] = true
+            rows[f"{v}_pred_label"] = np.where(rng.random(n) < 0.15, 1 - true, true)
+            rows[f"{v}_pred_prob"] = rng.random(n)
+        pd.DataFrame(rows).to_csv(run / "predictions.csv", index=False)
+    paths["r_output"].mkdir()
+    eln = ["Favorable", "Intermediate", "Adverse"]
+    for model_type, slide_type in [("bm", "bm"), ("pb", "pb"), ("fusion", "bm")]:
+        for vs in ["selected_variables", "NPM1", "FLT3-ITD"]:
+            base = rng.choice(eln, size=n)
+            tp = base.copy()
+            change = rng.random(n) < 0.2
+            tp[change] = rng.choice(eln, size=change.sum())
+            for mode, groups in (("TARGETS", base), ("TP", tp)):
+                pd.DataFrame(dict(**ids, ELN1=groups)).to_csv(
+                    paths["r_output"] / f"aml_mut_pred_{mode}_{vs}_{model_type}_eln_{slide_type}_{version}.csv", index=False)
+    return paths

@@ -1,4 +1,4 @@
-"""Extract the cell tables of the cell-image figures once (Fig 6 gallery, S1 cards, S2 pages).
+"""Extract the cell tables of the cell-image figures once (Fig 6 gallery, variable cards, TP/FP pages).
 
 Run from the repository root:
     .venv/bin/python scripts/extract_gallery_cells.py [--skip-top]     # --skip-top: reuse top_cells.parquet
@@ -15,7 +15,7 @@ Outputs (git-ignored), data/<DATA_VERSION_IDENTIFIER>/derived/gallery/:
     run_info.json
 Also writes derived/cell_crops/lists/gallery.csv; fetch the images with
     .venv/bin/python scripts/extract_cell_crops.py data/<DATA_VERSION_IDENTIFIER>/derived/cell_crops/lists/*.csv
-(the card and S2 figure functions write their own lists when run).
+(the card and TP/FP page functions write their own lists when run).
 """
 import glob
 import json

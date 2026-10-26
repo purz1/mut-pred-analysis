@@ -1,4 +1,4 @@
-"""S2: top-attention cells of true- and false-positive samples, one page per card target (BM and PB models).
+"""Supplement (TP/FP pages): top-attention cells of true- and false-positive samples, one page per card target (BM and PB models).
 
 Cells are chosen by attention only: the model's top-attention cells (attention-mass threshold 0.5, as Fig 4/5) of the TP and
 FP samples (errors.samples). Random draw (fixed per cell): ≤ PER_SAMPLE cells per sample, ≤ N_CELLS per panel; no quality,

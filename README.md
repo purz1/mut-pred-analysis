@@ -92,7 +92,7 @@ Set `USE_DUMMY_DATA = True` in `config.py` (default) to use synthetic data.
 
 ```bash
 conda env create -f environment.yml
-conda activate aml-mut-pred
+conda activate aml_mut
 ```
 
 Update `environment.yml`: 
@@ -192,7 +192,7 @@ python 4_import_predictions.py        # extracts zip into data/{V}/model_predict
 | 2 | `scripts/extract_error_attention_cache.py` (minutes) | `error_analysis/sample_attention_summary.parquet` | error-analysis supplements |
 | 3 | `scripts/extract_error_outcome_stats.py` | `error_analysis/morph_outcome_stats.csv` (needs 2) | error-analysis supplements |
 | 4 | `scripts/extract_morphometry_dysplasia_correlation.py` | `morph_dysplasia/` | morphometry of dysplastic cells (supplement) |
-| 5 | `scripts/extract_gallery_cells.py` (~3 min; `--skip-top` reuses the top cells) | `gallery/`: top cells of all card targets, clusters + 2D embedding, Fig 6 tiles; also the cell lists for step 6 | Fig 6, S1 cards, S2 pages, embedding scatter |
+| 5 | `scripts/extract_gallery_cells.py` (~3 min; `--skip-top` reuses the top cells) | `gallery/`: top cells of all card targets, clusters + 2D embedding, Fig 6 tiles; also the cell lists for step 6 | Fig 6, variable cards (S7), TP/FP pages (S8), embedding scatter (S6) |
 | 6 | `scripts/extract_cell_crops.py data/<version>/derived/cell_crops/lists/*.csv` | `cell_crops/` (cached cell images) | everything that shows cell images |
 
 3. **Cell images (step 6)** need the image server on `localhost:5432` and the NAS. The figure code writes the cell lists, so the first time: run the notebook once, fetch the crops, run the notebook again. Cells without an image are drawn as stand-ins. Cells whose window leaves the field and samples with unreadable images are skipped, so the selection is stable; failed fetches are listed in `cell_crops/missing.csv`.

@@ -1,5 +1,5 @@
-"""Cell-level data and drawing shared by the cell-image figures: Fig 6 gallery (gallery.py), S1 cards (cards.py) and
-S2 pages (outcome_pages.py).
+"""Cell-level data and drawing shared by the cell-image figures: Fig 6 gallery (gallery.py), variable cards (cards.py) and
+TP/FP pages (outcome_pages.py).
 
 Data: the cell-level parquet (class, low-quality score, morphometry, classifier flags); derived/gallery/top_cells.parquet =
 top-attention cells (attention-mass threshold 0.5, as Fig 4/5) of every sample per target and modality

@@ -198,7 +198,7 @@ python 4_import_predictions.py        # extracts zip into data/{V}/model_predict
 3. **Cell images (step 6)** need the image server on `localhost:5432` and the NAS. The figure code writes the cell lists, so the first time: run the notebook once, fetch the crops, run the notebook again. Cells without an image are drawn as stand-ins. Cells whose window leaves the field and samples with unreadable images are skipped, so the selection is stable; failed fetches are listed in `cell_crops/missing.csv`.
 4. **Run the notebook** top to bottom. Sections with missing inputs print a message instead of a figure.
 
-> **Pixel size is still a placeholder** (`UM_PER_PX` in `manuscript_figures/config.py`, 0.17 µm/px for BM and PB). Replace it with the true values and remove `UM_PER_PX_PLACEHOLDER` before using any µm² numbers; rerun the notebook afterwards.
+> **Pixel size:** BM = 1 / 9.034925854 µm/px (`UM_PER_PX` in `manuscript_figures/config.py`; area × MPP² = µm²). PB uses the same value but this is not yet confirmed (`UM_PER_PX_UNCONFIRMED`); once it is, update `UM_PER_PX["PB"]`, empty `UM_PER_PX_UNCONFIRMED` and rerun the notebook.
 
 ---
 

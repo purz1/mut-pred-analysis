@@ -4,7 +4,7 @@ TP/FP pages (outcome_pages.py).
 Data: the cell-level parquet (class, low-quality score, morphometry, classifier flags); derived/gallery/top_cells.parquet =
 top-attention cells (attention-mass threshold 0.5, as Fig 4/5) of every sample per target and modality
 (scripts/extract_gallery_cells.py); cell images derived/cell_crops (scripts/extract_cell_crops.py, window in crops.py).
-Areas are converted with config.UM_PER_PX (PLACEHOLDER).
+Areas are converted with config.UM_PER_PX.
 Cell choice for the cards:
     typical   closest to the top cells' median (frame measure ×2, other slider measures ×1); TP samples first
     striking  most extreme in the frame measure in the effect direction (within the 2nd–98th percentile)
@@ -58,7 +58,7 @@ def cell_table(mod):
     have = set(pq.read_schema(f).names)
     c = pd.read_parquet(f, columns=KEY + ["class_label", "low_quality"] + MEASURES + [t for t in TAG if t in have])
     c = c.astype({**{m: float for m in MEASURES}, "database_id": str, "album_id": str, "cell_id": "int64"})
-    for m in MEASURES:  # px → µm² for areas (C.UM_PER_PX is a PLACEHOLDER)
+    for m in MEASURES:  # px → µm² for areas (config.UM_PER_PX)
         c[m] *= C.to_um(m, mod)[0]
     return c.assign(key=c.database_id + "/" + c.album_id + "/" + c.cell_id.astype(str))
 

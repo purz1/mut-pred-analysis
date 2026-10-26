@@ -196,7 +196,7 @@ def feature_box(ax, var, mod, col):
     if col.endswith("_proportion"):
         ax.set_ylabel("% of cells")
     elif unit:
-        ax.set_ylabel(unit + (" (placeholder px size)" if C.UM_PER_PX_PLACEHOLDER else ""))
+        ax.set_ylabel(unit + (" (px size unconfirmed)" if mod in C.UM_PER_PX_UNCONFIRMED else ""))
 
 
 # ── card: differentials + frames with example cells ──────────────────────────
@@ -260,7 +260,7 @@ def _legend(fig, H, frames=True):
     if frames:
         txt += (f"\nCells (one scale; edge cells skipped): {N_TYPICAL} typical top-attention cells of Pos samples, one per sample, TP first | "
                 "1 striking (red label); chips = classifier flags of the target's associated\ndysplasia features. Sliders (per cell): ▼ = "
-                "this cell; bars = middle 50% of Neg (blue) / Pos (orange) cells of the type; areas in µm² (PLACEHOLDER pixel size).")
+                "this cell; bars = middle 50% of Neg (blue) / Pos (orange) cells of the type; areas in µm² (PB pixel size assumed equal to BM, not yet confirmed).")
     lg.text(0.5, 0.5, txt, ha="center", va="center", fontsize=4.1, color="#444", transform=lg.transAxes, linespacing=1.3)
 
 

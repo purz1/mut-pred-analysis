@@ -322,7 +322,7 @@ def make(method="kmeans"):
              f"Sliders (≤ {MAX_SL} per cell): only morphometry features associated with the target in the cell's type on which the cell lies beyond the "
              "median of the Pos cells of that type (effect direction);\n"
              "▼ = this cell (open = outside the axis) against the middle 50% of Neg (blue) and Pos (orange) cells, axis zoomed, real units "
-             "(areas in µm², PLACEHOLDER pixel size).\n"
+             "(areas in µm²).\n"
              "Frame = cell-type colour; chips = classifier flags (dysplasia colours). Bar = " + (
                  "attention share of the cells nearest to each shown cell (letters = tiles, colour = dominant lineage)"
                  if method == "medoid" else

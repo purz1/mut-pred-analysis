@@ -179,6 +179,29 @@ python 4_import_predictions.py        # extracts zip into data/{V}/model_predict
 
 ---
 
+## After a new model run: regenerating the manuscript figures
+
+`11_cytomorphology_analysis_V2.ipynb` only reads derived tables; it computes nothing heavy. After new aml-mil training runs, regenerate the tables below in this order (from the repository root, data environment). All outputs are git-ignored and go to `data/{DATA_VERSION_IDENTIFIER}/derived/`.
+
+1. **Model outputs from aml-mil:** run its steps after training (see [aml-mil README](../aml-mil/README.md#after-training-completing-the-manuscript-figures)), then `export_predictions.py` there, put `predictions.zip` in the project root and run `python 4_import_predictions.py`. Set the aml-mil run name in `manuscript_figures/config.py`. The notebook shows Fig 2, Fig 3 and the performance supplements from `aml-mil/results/<RUN>/figures`.
+2. **Extraction scripts**:
+
+| Order | Script | Writes (`derived/…`) | Used by |
+|---|---|---|---|
+| 1 | `scripts/extract_fig4_fingerprint_results.py` | `fig4_fingerprints/` (feature effects, fingerprint tags, attention enrichment, per-sample features) | Fig 4/5, variable cards, gallery |
+| 2 | `scripts/extract_error_attention_cache.py` (minutes) | `error_analysis/sample_attention_summary.parquet` | error-analysis supplements |
+| 3 | `scripts/extract_error_outcome_stats.py` | `error_analysis/morph_outcome_stats.csv` (needs 2) | error-analysis supplements |
+| 4 | `scripts/extract_morphometry_dysplasia_correlation.py` | `morph_dysplasia/` | morphometry of dysplastic cells (supplement) |
+| 5 | `scripts/extract_gallery_cells.py` (~3 min; `--skip-top` reuses the top cells) | `gallery/`: top cells of all card targets, clusters + 2D embedding, Fig 6 tiles; also the cell lists for step 6 | Fig 6, S1 cards, S2 pages, embedding scatter |
+| 6 | `scripts/extract_cell_crops.py data/<version>/derived/cell_crops/lists/*.csv` | `cell_crops/` (cached cell images) | everything that shows cell images |
+
+3. **Cell images (step 6)** need the image server on `localhost:5432` and the NAS. The figure code writes the cell lists, so the first time: run the notebook once, fetch the crops, run the notebook again. Cells without an image are drawn as stand-ins. Cells whose window leaves the field and samples with unreadable images are skipped, so the selection is stable; failed fetches are listed in `cell_crops/missing.csv`.
+4. **Run the notebook** top to bottom. Sections with missing inputs print a message instead of a figure.
+
+> **Pixel size is still a placeholder** (`UM_PER_PX` in `manuscript_figures/config.py`, 0.17 µm/px for BM and PB). Replace it with the true values and remove `UM_PER_PX_PLACEHOLDER` before using any µm² numbers; rerun the notebook afterwards.
+
+---
+
 ## Generating dummy data
 
 Any DataFrame saved with `save_with_dummy()` automatically gets a `_DUMMY` companion in the same folder.

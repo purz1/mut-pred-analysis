@@ -1,6 +1,6 @@
 """FAB class and the targets: composition, coverage, prevalence, model performance and errors per FAB group.
 
-Input: derived/fab/fab_by_subject.csv with the columns subject_id and fab (M0 … M7), one row per patient; and the predictions of the three
+Input: FAB_DATA_PATH (config.py: data/<version>/fab/aml_mut_pred_fab_<version>.csv) with the columns subject_id and fab (M0 … M7), one row per patient; and the predictions of the three
 model runs (config.py). FAB is attached to every model by subject_id (the same patient in BM and PB).
 FAB classes are pooled into GROUPS; M3 (APL) only serves as a positive control and is left out of the group contrasts below.
 Per modality × variable × FAB group: n, positives, prevalence, AUROC / AP (patient bootstrap CI), miss rate (FN / true positives) and
@@ -23,7 +23,7 @@ from statsmodels.stats.multitest import multipletests
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
-from config import BM_RUN_PATH, FUSION_RUN_PATH, PB_RUN_PATH, SELECTED_VARIABLES  # noqa: E402
+from config import BM_RUN_PATH, FAB_DATA_PATH, FUSION_RUN_PATH, PB_RUN_PATH, SELECTED_VARIABLES  # noqa: E402
 from core.data_loading import DERIVED_DIR  # noqa: E402
 
 OUT = DERIVED_DIR / "fab"
@@ -55,7 +55,7 @@ def group_of(fab):
 
 
 def main():
-    fab = pd.read_csv(OUT / "fab_by_subject.csv", dtype={"fab": str})[["subject_id", "fab"]].dropna()
+    fab = pd.read_csv(FAB_DATA_PATH, dtype={"fab": str})[["subject_id", "fab"]].dropna()
     assert fab.subject_id.is_unique, "a patient has several FAB values"
     rng = np.random.default_rng(0)
     comp, prev, cov, perf, err, con = [], [], [], [], [], []

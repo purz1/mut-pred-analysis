@@ -199,6 +199,8 @@ python 4_import_predictions.py        # extracts zip into data/{V}/model_predict
 | 7 | `scripts/extract_vaf_by_outcome.py` (needs the VAF tables of `config.py`) | `error_analysis/vaf_by_outcome.csv`, `vaf_outcome_stats.csv` | VAF of TP vs FN (S13) |
 | 8 | `scripts/extract_fab_analysis.py` (needs `FAB_DATA_PATH`: subject_id, fab) | `fab/`: composition, coverage, prevalence, performance and error rates per FAB group | FAB supplements (S14–S16) |
 | 9 | `scripts/extract_fab_features.py` (needs 1 and `FAB_DATA_PATH`) | `fab/fab_feature_effects.csv`: fingerprint per FAB group, interaction and FAB-stratified tests, only for `FAB_TARGETS` of `extract_fab_analysis.py` (PML-RARA, NPM1) | FAB supplements (S16) |
+| 10 | `scripts/extract_cooccurrence.py` | `cooccurrence/`: cell counts and φ per pair of targets, model coupling | co-occurrence overview (S17a) |
+| 11 | `scripts/extract_cooccurrence_features.py` (needs 1) | `cooccurrence/cooc_feature_effects.csv`, `cooc_summary.csv`: fingerprints adjusted for a co-occurring target | S17b–c |
 
 3. **Cell images (step 6)** need the image server on `localhost:5432` and the NAS. The figure code writes the cell lists, so the first time: run the notebook once, fetch the crops, run the notebook again. Cells without an image are drawn as stand-ins. Cells whose window leaves the field and samples with unreadable images are skipped, so the selection is stable; failed fetches are listed in `cell_crops/missing.csv`.
 4. **Run the notebook** top to bottom. Sections with missing inputs print a message instead of a figure.

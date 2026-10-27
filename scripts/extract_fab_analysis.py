@@ -85,7 +85,7 @@ def main():
                 yy, pp = g[y].to_numpy(int), g[p].to_numpy(float)
                 tp, fn = int(((g[y] == 1) & (g[yh] == 1)).sum()), int(((g[y] == 1) & (g[yh] == 0)).sum())
                 fp, tn = int(((g[y] == 0) & (g[yh] == 1)).sum()), int(((g[y] == 0) & (g[yh] == 0)).sum())
-                prev.append(dict(model=model, variable=v, group=gname, n=len(g), n_pos=int(yy.sum()), prevalence=yy.mean()))
+                prev.append(dict(model=model, variable=v, level="group", group=gname, n=len(g), n_pos=int(yy.sum()), prevalence=yy.mean()))
                 row = dict(model=model, variable=v, group=gname, n=len(g), n_pos=int(yy.sum()))
                 if min(yy.sum(), len(yy) - yy.sum()) >= MIN_CLASS:
                     for name, fn_ in (("auroc", roc_auc_score), ("ap", average_precision_score)):
@@ -96,6 +96,8 @@ def main():
                     lo, hi = exact_ci(k, n)
                     err.append(dict(model=model, variable=v, group=gname, kind=kind, k=k, n=n,
                                     rate=k / n if n else np.nan, low=lo, high=hi))
+            prev += [dict(model=model, variable=v, level="class", group=c, n=len(g), n_pos=int((g[y] == 1).sum()), prevalence=(g[y] == 1).mean())
+                     for c, g in x.dropna(subset=["fab"]).groupby("fab")]
             # contrast of the two main groups
             for kind, pos in (("miss", 1), ("false_alarm", 0)):
                 cells = []

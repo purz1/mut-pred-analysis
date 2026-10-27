@@ -8,6 +8,7 @@ RUN = "AML_V15_OPTIMIZED_PARAMETERS"  # aml-mil run for Fig 2/3 and calibration 
 
 DERIVED = REPO / f"data/{DATA_VERSION_IDENTIFIER}/derived"
 FINGERPRINTS = DERIVED / "fig4_fingerprints"   # scripts/extract_fig4_fingerprint_results.py
+FAB = DERIVED / "fab"                           # scripts/extract_fab_analysis.py, extract_fab_features.py
 ERRORS = DERIVED / "error_analysis"            # scripts/extract_error_attention_cache.py, extract_error_outcome_stats.py
 AML_MIL_FIGS = REPO.parent / "aml-mil/results" / RUN / "figures"
 

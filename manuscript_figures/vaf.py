@@ -47,8 +47,7 @@ def vaf_by_outcome(modality):
             ax.set_ylim(0, top * 1.22)
             if pd.notna(r.get("auroc")):
                 yb = top * 1.08
-                ax.plot([0, 1], [yb, yb], lw=0.6, color="k")
-                ax.text(0.5, yb * 1.01, _p(r.padj), ha="center", va="bottom", fontsize=5)
+                ax.text(0.5, yb, _p(r.padj), ha="center", va="bottom", fontsize=5)
             txt = f"AUROC {r.auroc:.2f} ({r.auroc_low:.2f}–{r.auroc_high:.2f})" if pd.notna(r.get("auroc")) else "n too small"
             ax.text(0.5, 1.0, txt, transform=ax.transAxes, ha="center", va="bottom", fontsize=4.6)
             ax.set_title(vname(v), color=vcol(v), fontsize=6, fontweight="bold", pad=9)

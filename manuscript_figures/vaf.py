@@ -1,6 +1,6 @@
 """VAF of detected (TP) and missed (FN) positives, one panel per target with a VAF.
 
-vaf_by_outcome(modality)   box + points of the VAF for FN and TP; AUROC of the VAF for TP vs FN (95% CI) and the Mann–Whitney p (BH-FDR adjusted within modality; printed as p).
+vaf_by_outcome(modality)   coloured boxes (IQR, median, no whiskers) of the VAF for FN and TP; AUROC of the VAF for TP vs FN (95% CI) and the Mann–Whitney p (BH-FDR adjusted within modality; printed as p).
 Inputs: derived/error_analysis/vaf_by_outcome.csv and vaf_outcome_stats.csv (scripts/extract_vaf_by_outcome.py).
 """
 from functools import cache
@@ -16,7 +16,7 @@ NCOL = 4
 
 
 def _p(p):
-    return "p < 0.001" if p < 0.001 else f"p = {p:.3f}"
+    return r"$\it{P}$ < 0.001" if p < 0.001 else rf"$\it{{P}}$ = {p:.3f}"
 
 
 @cache
@@ -34,16 +34,22 @@ def vaf_by_outcome(modality):
         rng = np.random.default_rng(0)
         for ax, v in zip(axes.flat, variables):
             d = samples[(samples.modality == modality) & (samples.variable == v)]
-            for x, o in enumerate(["FN", "TP"]):
-                y = d.loc[d.outcome == o, "vaf"].to_numpy()
-                if len(y):
-                    ax.boxplot(y, positions=[x], widths=0.5, showfliers=False, medianprops=dict(color="k", lw=0.8),
-                               boxprops=dict(lw=0.5), whiskerprops=dict(lw=0.5), capprops=dict(lw=0.5))
-                    ax.scatter(x + rng.uniform(-0.17, 0.17, len(y)), y, s=3, color=OUT_COL[o], alpha=0.7, lw=0, zorder=3)
+            ys = [d.loc[d.outcome == o, "vaf"].to_numpy() for o in ("FN", "TP")]
+            bp = ax.boxplot([y for y in ys if len(y)], positions=[x for x, y in enumerate(ys) if len(y)], widths=0.6, whis=0,
+                            showfliers=False, showcaps=False, patch_artist=True, medianprops=dict(color="k", lw=1.2),
+                            whiskerprops=dict(lw=0))
+            for bx, o in zip(bp["boxes"], [o for o, y in zip(("FN", "TP"), ys) if len(y)]):
+                bx.set(facecolor=OUT_COL[o], alpha=0.9, lw=0.4)
             r = st.loc[v]
-            txt = f"AUROC {r.auroc:.2f} ({r.auroc_low:.2f}–{r.auroc_high:.2f})\n{_p(r.padj)}" if pd.notna(r.get("auroc")) else "n too small"
+            top = max(np.percentile(y, 75) for y in ys if len(y))
+            ax.set_ylim(0, top * 1.22)
+            if pd.notna(r.get("auroc")):
+                yb = top * 1.08
+                ax.plot([0, 1], [yb, yb], lw=0.6, color="k")
+                ax.text(0.5, yb * 1.01, _p(r.padj), ha="center", va="bottom", fontsize=5)
+            txt = f"AUROC {r.auroc:.2f} ({r.auroc_low:.2f}–{r.auroc_high:.2f})" if pd.notna(r.get("auroc")) else "n too small"
             ax.text(0.5, 1.0, txt, transform=ax.transAxes, ha="center", va="bottom", fontsize=4.6)
-            ax.set_title(vname(v), color=vcol(v), fontsize=6, fontweight="bold", pad=17)
+            ax.set_title(vname(v), color=vcol(v), fontsize=6, fontweight="bold", pad=9)
             ax.set_xticks([0, 1], [f"FN\n(n={int(r.n_fn)})", f"TP\n(n={int(r.n_tp)})"])
             ax.set_xlim(-0.6, 1.6)
             ax.set_ylabel("VAF (%)")

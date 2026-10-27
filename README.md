@@ -239,6 +239,10 @@ Question: how much of the ELN stratification do the model's labels preserve (ref
 - **Not covered by the data:** M6/M7 (TP53, complex karyotype) cannot be tested; M4 alone (n = 11) is too small.
 - Write the results as a short paragraph; figures stay in the supplement.
 
+### Parked: co-occurring targets (S17)
+
+Decided on 2026-10-28 not to include this in the manuscript for now (too large for a supplement). It is built and runs on the local real data: `scripts/extract_cooccurrence.py`, `scripts/extract_cooccurrence_features.py`, `manuscript_figures/cooccurrence.py`, notebook section S17. Results so far: the model does not couple targets more than the data do; the NPM1 fingerprint keeps about 90–105% of its effect when adjusted for FLT3-ITD, IDH, CpG or RTK/RAS; the lowest are CpG mutations given NPM1 (69%) and complex karyotype given TP53 (78%). Do not use the "kept k/n significant" counts (FDR-threshold artifact).
+
 ### 4. After the MANUSCRIPT_V1 run
 
 The attention files of the stand-in run (`AML_V15_OPTIMIZED_PARAMETERS`) lost attention scores for arbitrary labelled bags (masking bug fixed in aml-mil `e97172f`). With the new run: check that no labelled bag has an empty `cell_attention_score_<target>` (CBFB-MYH11 should have 12 true positives in BM, not 8), then re-run all `scripts/extract_*.py` in the order of the table above and the V2 notebook.

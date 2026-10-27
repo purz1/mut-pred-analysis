@@ -6,8 +6,9 @@ For each pair (X, Y) of PAIRS, modality and sample-level feature (as in scripts/
   delta_adj      stratum-weighted mean δ (weights n(X+) · n(X−)); p_adj_strat / padj_strat: van Elteren stratified Wilcoxon test of X given Y
   delta_yalone   δ of Y+ against Y− within X− samples (the effect of Y without X; similar to delta_all would mean the feature may belong to Y)
   p_interaction  difference of delta_ypos and delta_yneg (DeLong z-test on the AUCs), BH within modality × pair × feature type
-cooc_summary.csv per modality and pair: features with an unadjusted effect (padj_all < ALPHA), how many keep their sign and stay significant after
-adjusting for Y, Spearman correlation of delta_all and delta_adj, median |δ_adj| / |δ_all| of the significant features.
+cooc_summary.csv per modality and pair: features with an unadjusted effect (padj_all < ALPHA), Spearman correlation of delta_all and delta_adj, median
+delta_adj / delta_all of the significant features (the share of the effect that remains; the main result). n_kept / frac_kept (significant before and after,
+same sign) are given for completeness but depend on the FDR threshold: features just below it before adjusting drop out easily; do not use them as the result.
 Exploratory (the pairs are chosen from the cell counts of scripts/extract_cooccurrence.py).
 
     .venv/bin/python scripts/extract_cooccurrence_features.py

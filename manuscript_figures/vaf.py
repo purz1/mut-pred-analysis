@@ -40,8 +40,8 @@ def vaf_by_outcome(modality):
                             whiskerprops=dict(lw=0))
             for bx, o in zip(bp["boxes"], [o for o, y in zip(("FN", "TP"), ys) if len(y)]):
                 bx.set(facecolor=OUT_COL[o], alpha=0.35, lw=0.4)
-            for x, (o, y) in enumerate(zip(("FN", "TP"), ys)):
-                ax.scatter(x + rng.uniform(-0.2, 0.2, len(y)), y, s=3, color=OUT_COL[o], lw=0, zorder=3)
+            for x, y in enumerate(ys):
+                ax.scatter(x + rng.uniform(-0.2, 0.2, len(y)), y, s=3, color=".3", lw=0, zorder=3)
             r = st.loc[v]
             top = max(y.max() for y in ys if len(y))
             ax.set_ylim(0, top * 1.22)

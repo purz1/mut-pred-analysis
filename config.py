@@ -47,6 +47,7 @@ CLINICAL_DATA_PATH_BM   = resolve_data_path(f"data/{_V}/unprocessed_clinical/aml
 CLINICAL_DATA_PATH_PB   = resolve_data_path(f"data/{_V}/unprocessed_clinical/aml_mut_pred_unprocessed_clinical_data_pb_{_V}.csv")
 MUTATION_LABELS_PATH_BM = resolve_data_path(f"data/{_V}/mutation_labels/aml_mut_pred_sample_ids_bm_{_V}.xlsx")
 MUTATION_LABELS_PATH_PB = resolve_data_path(f"data/{_V}/mutation_labels/aml_mut_pred_sample_ids_pb_{_V}.xlsx")
+FAB_DATA_PATH           = resolve_data_path(f"data/{_V}/fab/aml_mut_pred_fab_{_V}.csv")  # patient id (henkilotunnus) + FAB; only used by scripts/prepare_fab_table.py
 
 # ── Variables ──────────────────────────────────────────────────────────────────
 SELECTED_VARIABLES = [

@@ -1,6 +1,7 @@
 """FAB class and the targets: composition, coverage, prevalence, model performance and errors per FAB group.
 
-Input: derived/fab/fab_by_sample.csv (scripts/prepare_fab_table.py) and the predictions of the three model runs (config.py).
+Input: derived/fab/fab_by_sample.csv with the columns album_id, database_id and fab (M0 … M7), one row per patient, using the BM sample ids; and the
+predictions of the three model runs (config.py). FAB is attached to every model by subject_id (the same patient in BM and PB).
 FAB classes are pooled into GROUPS; M3 (APL) only serves as a positive control and is left out of the group contrasts below.
 Per modality × variable × FAB group: n, positives, prevalence, AUROC / AP (patient bootstrap CI), miss rate (FN / true positives) and
 false-alarm rate (FP / true negatives) with exact Clopper–Pearson CIs. Contrast of the two main groups (CONTRAST): Fisher exact test of the
@@ -23,12 +24,12 @@ from statsmodels.stats.multitest import multipletests
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 from config import BM_RUN_PATH, FUSION_RUN_PATH, PB_RUN_PATH, SELECTED_VARIABLES  # noqa: E402
-from core.data_loading import DERIVED_DIR  # noqa: E402
+from core.data_loading import DERIVED_DIR, load_labels  # noqa: E402
 
 OUT = DERIVED_DIR / "fab"
 GROUPS = {"M0–M2": ["M0", "M1", "M2"], "M3": ["M3"], "M4–M5": ["M4", "M5"]}
 CONTRAST = ("M0–M2", "M4–M5")
-RUNS = {"BM": (BM_RUN_PATH, "BM"), "PB": (PB_RUN_PATH, "PB"), "FUSION": (FUSION_RUN_PATH, "BM")}  # model → (run, FAB table modality)
+RUNS = {"BM": BM_RUN_PATH, "PB": PB_RUN_PATH, "FUSION": FUSION_RUN_PATH}
 MIN_CLASS = 5  # positives and negatives needed for an AUROC
 N_BOOT = 2000
 
@@ -54,15 +55,15 @@ def group_of(fab):
 
 
 def main():
-    fab = pd.read_csv(OUT / "fab_by_sample.csv", dtype=str)
+    fab = pd.read_csv(OUT / "fab_by_sample.csv", dtype=str)[["album_id", "database_id", "fab"]]
+    fab = load_labels("BM")[["subject_id", "album_id", "database_id"]].merge(fab, on=["album_id", "database_id"])[["subject_id", "fab"]]
+    assert fab.subject_id.is_unique, "a patient has several FAB values"
     rng = np.random.default_rng(0)
     comp, prev, cov, perf, err, con = [], [], [], [], [], []
 
-    for model, (run, fab_mod) in RUNS.items():
+    for model, run in RUNS.items():
         pred = pd.read_csv(REPO / run / "predictions.csv")
-        pred[["album_id", "database_id"]] = pred[["album_id", "database_id"]].astype(str)
-        f = fab[fab.modality == fab_mod].drop(columns="modality").drop_duplicates(["album_id", "database_id"])
-        d = pred.merge(f, on=["album_id", "database_id"], how="left")
+        d = pred.merge(fab.assign(subject_id=fab.subject_id.astype(pred.subject_id.dtype)), on="subject_id", how="left")
         d["group"] = group_of(d.fab)
         print(f"{model}: {len(d)} samples, FAB for {d.fab.notna().sum()}")
 

@@ -155,8 +155,9 @@ def make_toy_eln_data(out_dir, variables, version, n=200, seed=42):
     for m in ("bm", "pb"):
         pd.DataFrame(dict(album_id=ids["album_id"], year=ids["database_id"], henkilotunnus=ids["henkilotunnus"])
                      ).to_csv(paths["clinical"][m], index=False)
-        pd.DataFrame(dict(**ids, cyto=True, time_dg_to_death=rng.uniform(30, 3000, n), died=rng.random(n) < 0.5)
-                     ).to_excel(paths["survival"][m], index=False)
+        died = rng.random(n) < 0.5  # as in the real files, alive patients have no time
+        pd.DataFrame(dict(**ids, cyto=True, time_dg_to_death=np.where(died, rng.uniform(30, 3000, n), np.nan), died=died,
+                          age=rng.integers(18, 85, n))).to_excel(paths["survival"][m], index=False)
     pd.DataFrame(dict(henkilotunnus=ids["henkilotunnus"], NPM1=rng.uniform(0, 80, n), FLT3_ITD=rng.uniform(0, 40, n))
                  ).to_excel(paths["vaf"], index=False)
     for run in paths["runs"].values():
@@ -173,10 +174,11 @@ def make_toy_eln_data(out_dir, variables, version, n=200, seed=42):
     for model_type, slide_type in [("bm", "bm"), ("pb", "pb"), ("fusion", "bm")]:
         for vs in ["selected_variables", "NPM1", "FLT3-ITD"]:
             base = rng.choice(eln, size=n)
-            tp = base.copy()
-            change = rng.random(n) < 0.2
-            tp[change] = rng.choice(eln, size=change.sum())
-            for mode, groups in (("TARGETS", base), ("TP", tp)):
+            for mode in ("TARGETS", "TP", "TP_FP", "FN"):
+                groups = base.copy()
+                if mode != "TARGETS":
+                    change = rng.random(n) < 0.2
+                    groups[change] = rng.choice(eln, size=change.sum())
                 pd.DataFrame(dict(**ids, ELN1=groups)).to_csv(
                     paths["r_output"] / f"aml_mut_pred_{mode}_{vs}_{model_type}_eln_{slide_type}_{version}.csv", index=False)
     return paths

@@ -197,8 +197,8 @@ python 4_import_predictions.py        # extracts zip into data/{V}/model_predict
 | 5 | `scripts/extract_gallery_cells.py` (~3 min; `--skip-top` reuses the top cells) | `gallery/`: top cells of all card targets, clusters + 2D embedding, Fig 6 tiles; also the cell lists for step 6 | Fig 6, variable cards (S7), TP/FP pages (S8), embedding scatter (S6) |
 | 6 | `scripts/extract_cell_crops.py data/<version>/derived/cell_crops/lists/*.csv` | `cell_crops/` (cached cell images) | everything that shows cell images |
 | 7 | `scripts/extract_vaf_by_outcome.py` (needs the VAF tables of `config.py`) | `error_analysis/vaf_by_outcome.csv`, `vaf_outcome_stats.csv` | VAF of TP vs FN (S13) |
-| 8 | `scripts/extract_fab_analysis.py` (needs `FAB_DATA_PATH`: subject_id, fab) | `fab/`: composition, coverage, prevalence, performance and error rates per FAB group | FAB supplements |
-| 9 | `scripts/extract_fab_features.py` (needs 1 and `FAB_DATA_PATH`) | `fab/fab_feature_effects.csv`: fingerprint per FAB group, interaction and FAB-stratified tests | FAB supplements |
+| 8 | `scripts/extract_fab_analysis.py` (needs `FAB_DATA_PATH`: subject_id, fab) | `fab/`: composition, coverage, prevalence, performance and error rates per FAB group | FAB supplements (S14–S16) |
+| 9 | `scripts/extract_fab_features.py` (needs 1 and `FAB_DATA_PATH`) | `fab/fab_feature_effects.csv`: fingerprint per FAB group, interaction and FAB-stratified tests, only for `FAB_TARGETS` of `extract_fab_analysis.py` (PML-RARA, NPM1) | FAB supplements (S16) |
 
 3. **Cell images (step 6)** need the image server on `localhost:5432` and the NAS. The figure code writes the cell lists, so the first time: run the notebook once, fetch the crops, run the notebook again. Cells without an image are drawn as stand-ins. Cells whose window leaves the field and samples with unreadable images are skipped, so the selection is stable; failed fetches are listed in `cell_crops/missing.csv`.
 4. **Run the notebook** top to bottom. Sections with missing inputs print a message instead of a figure.

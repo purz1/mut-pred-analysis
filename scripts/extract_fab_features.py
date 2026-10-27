@@ -1,6 +1,6 @@
 """Does the morphological fingerprint of a target depend on the FAB class? Positive vs negative samples within FAB groups.
 
-For every modality × target × sample-level feature (the Fig 4/5 features, scripts/extract_fig4_fingerprint_results.py) and each FAB group
+For every modality × target in FAB_TARGETS (extract_fab_analysis.py) × sample-level feature (the Fig 4/5 features, scripts/extract_fig4_fingerprint_results.py) and each FAB group
 (GROUPS of extract_fab_analysis.py):
   delta_<group>   Cliff's δ of positive vs negative samples within the group (positive = positive samples larger), n_pos / n_neg
   delta_diff      δ(CONTRAST[0]) − δ(CONTRAST[1]); p_interaction: z-test of the difference of the two AUCs (= (δ + 1) / 2) with DeLong variances
@@ -26,9 +26,9 @@ from statsmodels.stats.multitest import multipletests
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
-from config import FAB_DATA_PATH, SELECTED_VARIABLES  # noqa: E402
+from config import FAB_DATA_PATH  # noqa: E402
 from core.data_loading import DERIVED_DIR, feature_lists, load_cohort  # noqa: E402
-from extract_fab_analysis import CONTRAST, GROUPS, group_of  # noqa: E402
+from extract_fab_analysis import CONTRAST, FAB_TARGETS, GROUPS, group_of  # noqa: E402
 
 OUT = DERIVED_DIR / "fab"
 MIN_N = 5
@@ -73,7 +73,7 @@ def main():
         df = df.dropna(subset=["group"])
         feats = feature_lists(df, modality)
         print(f"{modality}: {len(df)} samples with a FAB group: {df.group.value_counts().to_dict()}")
-        for var in SELECTED_VARIABLES:
+        for var in FAB_TARGETS:
             d = df[df[var].isin([0, 1])]
             for ftype, cols in feats.items():
                 part = []

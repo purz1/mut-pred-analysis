@@ -5,12 +5,12 @@ model runs (config.py). FAB is attached to every model by subject_id (the same p
 FAB classes are pooled into GROUPS; M3 (APL) only serves as a positive control and is left out of the group contrasts below.
 Per modality × variable × FAB group: n, positives, prevalence, AUROC / AP (patient bootstrap CI), miss rate (FN / true positives) and
 false-alarm rate (FP / true negatives) with exact Clopper–Pearson CIs. Contrast of the two main groups (CONTRAST): Fisher exact test of the
-miss rate and of the false-alarm rate, BH-FDR across variables within modality and error type (exploratory; small cells).
+miss rate and of the false-alarm rate, BH-FDR across the FAB_TARGETS within model and error type (exploratory, small cells).
 Coverage: samples with and without FAB compared by database (year) and by target prevalence.
 
     .venv/bin/python scripts/extract_fab_analysis.py
 Writes data/<DATA_VERSION_IDENTIFIER>/derived/fab/: fab_composition.csv, fab_target_prevalence.csv, fab_coverage.csv, fab_performance.csv,
-fab_errors.csv, fab_contrast.csv.
+fab_errors.csv, fab_contrast.csv, fab_outcomes.csv (TP / FN / FP / TN per FAB class).
 """
 import sys
 from pathlib import Path
@@ -30,6 +30,7 @@ OUT = DERIVED_DIR / "fab"
 GROUPS = {"M0–M2": ["M0", "M1", "M2"], "M3": ["M3"], "M4–M5": ["M4", "M5"]}
 CONTRAST = ("M0–M2", "M4–M5")
 RUNS = {"BM": BM_RUN_PATH, "PB": PB_RUN_PATH, "FUSION": FUSION_RUN_PATH}
+FAB_TARGETS = ["PML-RARA", "NPM1"]  # targets of the per-target supplements (S15, S16); the fingerprint by FAB group is only computed for these
 MIN_CLASS = 5  # positives and negatives needed for an AUROC
 N_BOOT = 2000
 
@@ -58,7 +59,7 @@ def main():
     fab = pd.read_csv(FAB_DATA_PATH, dtype={"fab": str})[["subject_id", "fab"]].dropna()
     assert fab.subject_id.is_unique, "a patient has several FAB values"
     rng = np.random.default_rng(0)
-    comp, prev, cov, perf, err, con = [], [], [], [], [], []
+    comp, prev, cov, perf, err, con, outc = [], [], [], [], [], [], []
 
     for model, run in RUNS.items():
         pred = pd.read_csv(REPO / run / "predictions.csv")
@@ -96,6 +97,10 @@ def main():
                     lo, hi = exact_ci(k, n)
                     err.append(dict(model=model, variable=v, group=gname, kind=kind, k=k, n=n,
                                     rate=k / n if n else np.nan, low=lo, high=hi))
+            for c, g in x.dropna(subset=["fab"]).groupby("fab"):
+                oc = g[f"{v}_true_label"].astype(int).astype(str) + g[f"{v}_pred_label"].astype(int).astype(str)
+                outc.append(dict(model=model, variable=v, fab=c, TP=int((oc == "11").sum()), FN=int((oc == "10").sum()),
+                                 FP=int((oc == "01").sum()), TN=int((oc == "00").sum())))
             prev += [dict(model=model, variable=v, level="class", group=c, n=len(g), n_pos=int((g[y] == 1).sum()), prevalence=(g[y] == 1).mean())
                      for c, g in x.dropna(subset=["fab"]).groupby("fab")]
             # contrast of the two main groups
@@ -112,15 +117,15 @@ def main():
                 con.append(row)
 
     con = pd.DataFrame(con)
-    con["padj"] = np.nan
-    for (_, _), idx in con.groupby(["model", "kind"]).groups.items():
+    con["padj"] = np.nan  # BH across the FAB_TARGETS only (pre-specified); the other targets keep the raw p
+    for _, idx in con[con.variable.isin(FAB_TARGETS)].groupby(["model", "kind"]).groups.items():
         ok = con.loc[idx, "p"].dropna().index
         if len(ok):
             con.loc[ok, "padj"] = multipletests(con.loc[ok, "p"], method="fdr_bh")[1]
 
     OUT.mkdir(parents=True, exist_ok=True)
     for name, rows in (("fab_composition", comp), ("fab_target_prevalence", prev), ("fab_coverage", cov),
-                       ("fab_performance", perf), ("fab_errors", err), ("fab_contrast", con)):
+                       ("fab_performance", perf), ("fab_errors", err), ("fab_contrast", con), ("fab_outcomes", outc)):
         pd.DataFrame(rows).to_csv(OUT / f"{name}.csv", index=False)
     print(f"Written to {OUT}")
 

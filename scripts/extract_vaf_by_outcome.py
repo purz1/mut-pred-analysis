@@ -4,7 +4,7 @@ Only mutated patients have a VAF, so the question is whether missed positives (F
 and whether the model probability follows the VAF. VAF values of other outcomes (FP / TN), where the table has any, are kept
 in the per-sample table. BM and FUSION predictions use the BM VAF table, PB predictions the PB one.
 Per modality × variable: n, median [IQR] VAF of TP and FN, AUROC of the VAF for TP vs FN with a 95% bootstrap CI, Mann–Whitney p
-(BH-FDR within modality), and Spearman correlation of VAF with the model probability among true positives.
+(BH-FDR within modality).
 
 Run from the repository root:
     .venv/bin/python scripts/extract_vaf_by_outcome.py [--vaf-bm FILE] [--vaf-pb FILE]
@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.stats import mannwhitneyu, spearmanr
+from scipy.stats import mannwhitneyu
 from statsmodels.stats.multitest import multipletests
 
 REPO = Path(__file__).resolve().parents[1]
@@ -66,7 +66,6 @@ def main():
             d = d.dropna(subset=["vaf", "outcome"]).assign(modality=modality, variable=v)
             samples.append(d)
             tp, fn = (d.loc[d.outcome == o, "vaf"].to_numpy(float) for o in ("TP", "FN"))
-            pos = d[d.outcome.isin(["TP", "FN"])]
             row = dict(modality=modality, variable=v, n_tp=len(tp), n_fn=len(fn),
                        median_tp=np.median(tp) if len(tp) else np.nan, median_fn=np.median(fn) if len(fn) else np.nan,
                        q25_tp=np.percentile(tp, 25) if len(tp) else np.nan, q75_tp=np.percentile(tp, 75) if len(tp) else np.nan,
@@ -74,8 +73,6 @@ def main():
             if len(tp) >= MIN_N and len(fn) >= MIN_N:
                 row.update(auroc=auroc(tp, fn), p=mannwhitneyu(tp, fn).pvalue)
                 row["auroc_low"], row["auroc_high"] = boot_ci(tp, fn, rng)
-            if len(pos) >= MIN_N:
-                row["rho_prob"], row["p_rho"] = spearmanr(pos.vaf, pos.pred_prob)
             rows.append(row)
         r = pd.DataFrame(rows)
         if "p" in r:

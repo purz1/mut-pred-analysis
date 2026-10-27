@@ -1,6 +1,6 @@
 """VAF of detected (TP) and missed (FN) positives, one panel per target with a VAF.
 
-vaf_by_outcome(modality)   coloured boxes (IQR, median, no whiskers) of the VAF for FN and TP; AUROC of the VAF for TP vs FN (95% CI) and the Mann–Whitney p (BH-FDR adjusted within modality; printed as p).
+vaf_by_outcome(modality)   light coloured boxes (IQR, median, no whiskers) with the samples as points, for FN and TP; AUROC of the VAF for TP vs FN (95% CI) and the Mann–Whitney p (BH-FDR adjusted within modality; printed as p).
 Inputs: derived/error_analysis/vaf_by_outcome.csv and vaf_outcome_stats.csv (scripts/extract_vaf_by_outcome.py).
 """
 from functools import cache
@@ -39,9 +39,11 @@ def vaf_by_outcome(modality):
                             showfliers=False, showcaps=False, patch_artist=True, medianprops=dict(color="k", lw=1.2),
                             whiskerprops=dict(lw=0))
             for bx, o in zip(bp["boxes"], [o for o, y in zip(("FN", "TP"), ys) if len(y)]):
-                bx.set(facecolor=OUT_COL[o], alpha=0.9, lw=0.4)
+                bx.set(facecolor=OUT_COL[o], alpha=0.35, lw=0.4)
+            for x, (o, y) in enumerate(zip(("FN", "TP"), ys)):
+                ax.scatter(x + rng.uniform(-0.2, 0.2, len(y)), y, s=3, color=OUT_COL[o], lw=0, zorder=3)
             r = st.loc[v]
-            top = max(np.percentile(y, 75) for y in ys if len(y))
+            top = max(y.max() for y in ys if len(y))
             ax.set_ylim(0, top * 1.22)
             if pd.notna(r.get("auroc")):
                 yb = top * 1.08

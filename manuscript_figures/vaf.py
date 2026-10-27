@@ -1,6 +1,6 @@
 """VAF of detected (TP) and missed (FN) positives, one panel per target with a VAF.
 
-vaf_by_outcome(modality)   box + points of the VAF for FN and TP; AUROC of the VAF for TP vs FN (95% CI) and the FDR-adjusted p.
+vaf_by_outcome(modality)   box + points of the VAF for FN and TP; AUROC of the VAF for TP vs FN (95% CI) and the Mann–Whitney p (BH-FDR adjusted within modality; printed as p).
 Inputs: derived/error_analysis/vaf_by_outcome.csv and vaf_outcome_stats.csv (scripts/extract_vaf_by_outcome.py).
 """
 from functools import cache
@@ -16,7 +16,7 @@ NCOL = 4
 
 
 def _p(p):
-    return "FDR p < 0.001" if p < 0.001 else f"FDR p = {p:.3f}"
+    return "p < 0.001" if p < 0.001 else f"p = {p:.3f}"
 
 
 @cache

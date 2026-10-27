@@ -207,6 +207,42 @@ python 4_import_predictions.py        # extracts zip into data/{V}/model_predict
 
 ---
 
+## Analyses waiting for the real data
+
+These are built and tested on synthetic data only (the patient-level files exist only in the academic environment). Nothing below has produced a real number yet. Each analysis needs its input, the commands, and a re-run of the notebook named.
+
+### 1. ELN risk groups per label-replacement mode (`8_eln_risk_group_analysis.ipynb`)
+
+Question: how much of the ELN stratification do the model's labels preserve (reference = true labels, TARGETS)? Not "better than ELN".
+- **Inputs (academic environment):** the R output for the modes `TARGETS`, `TP`, `TP_FP`, `FN` (`6_eln_risk_group_generation.ipynb` → `7_modify_eln_risk_groups.R`; `TP_FP_FN` is no longer generated, it equals `TP_FP`); the survival tables. An `age` column in the survival tables (optional) enables the Cox models.
+- **Run:** set `USE_TOY_DATA = False`; run the notebook top to bottom. The section *Label-replacement modes compared* writes `data/<version>/eln/mode_comparison.csv` and shows the table (C-index of TARGETS and the mode with 95% bias-corrected CIs, ΔC from a paired patient bootstrap, share in the same group, weighted kappa, patients moving up or down, patients lost to ELN1 = NA).
+- **Follow-up:** there are no follow-up dates, so alive patients are censored at the longest observed time, which inflates follow-up for recent patients. Every row is therefore also computed with follow-up cut at 36 months (`HORIZONS`); treat the cut version as primary. Report how censoring was set in the Methods.
+- **Choosing the configuration:** the best mode and modality are picked after seeing the table, so say so. To pre-specify, edit `PRIMARY` (default FUSION, `selected_variables`, `TP_FP`, 36 months) *before* looking. `PRIMARY` also drives the survival-at-12/24-months table and the age-adjusted Cox models.
+- **Then** use the Kaplan-Meier, Sankey and driver bar plots further down the notebook for the chosen configuration only. Code: `core/eln_analysis.py`.
+- **Fig 7 (clinical impact)** is not designed yet; this table is its likely basis.
+
+### 2. VAF of detected and missed positives (S13)
+
+- **Inputs:** the VAF tables of `config.py` (`VAF_DATA_PATH_BM`, `VAF_DATA_PATH_PB`; columns `album_id`, `database_id` and one VAF column per target). Targets without a VAF column are skipped.
+- **Run (where the VAF tables are):** `.venv/bin/python scripts/extract_vaf_by_outcome.py` → `derived/error_analysis/vaf_by_outcome.csv`, `vaf_outcome_stats.csv` (no patient identifiers). Copy them here if run elsewhere, then re-run the V2 notebook (S13a–c: BM, PB, FUSION).
+- Only mutated patients have a VAF, so the contrast is FN against TP. P values are BH-FDR adjusted across the targets of the model.
+
+### 3. FAB classes (S14–S16)
+
+- **Input:** `data/<version>/fab/aml_mut_pred_fab_<version>.csv` (`FAB_DATA_PATH`) with the columns `subject_id` (the anonymised integer of `predictions.csv`, not `henkilotunnus`) and `fab` (`M0` … `M7`), one row per patient.
+- **Run:** `.venv/bin/python scripts/extract_fab_analysis.py`, then `.venv/bin/python scripts/extract_fab_features.py`; re-run the V2 notebook.
+- **Groups:** M0–M2, M3, M4–M5 (counts in the cohort: M2 124, M5 89, M1 88, M3 24, M4 11, M0 9; no M6/M7, M4eo not coded). M3 is a control only. Targets of the per-target supplements: `FAB_TARGETS` in `scripts/extract_fab_analysis.py` (PML-RARA → S15, NPM1 → S16); add a target there and a notebook section to extend.
+- **Check first (S14):** the FAB × target prevalence heatmap should show PML-RARA in M3, and `fab_coverage.csv` shows whether patients with a FAB class differ from those without (39% have none).
+- **Pre-specified hypothesis:** NPM1-positive blasts in M0–M2 (mostly M1) have more indented nuclei than in M4–M5 (Rastogi et al.; cup-shaped nuclei). Proxy features: solidity, compactness and eccentricity of blast nuclei (flagged ◆ in S16). Everything else is exploratory; interaction FDR is across the features of one target.
+- **Not covered by the data:** M6/M7 (TP53, complex karyotype) cannot be tested; M4 alone (n = 11) is too small.
+- Write the results as a short paragraph; figures stay in the supplement.
+
+### 4. After the MANUSCRIPT_V1 run
+
+The attention files of the stand-in run (`AML_V15_OPTIMIZED_PARAMETERS`) lost attention scores for arbitrary labelled bags (masking bug fixed in aml-mil `e97172f`). With the new run: check that no labelled bag has an empty `cell_attention_score_<target>` (CBFB-MYH11 should have 12 true positives in BM, not 8), then re-run all `scripts/extract_*.py` in the order of the table above and the V2 notebook.
+
+---
+
 ## Generating dummy data
 
 Any DataFrame saved with `save_with_dummy()` automatically gets a `_DUMMY` companion in the same folder.

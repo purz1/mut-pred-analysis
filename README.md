@@ -68,8 +68,8 @@ The models themselves live in a separate `aml-mil` repository. This repo contain
 | `5_genetic_aberration_based_survival_analysis` | Kaplan-Meier survival curves stratified by mutation status and model prediction accuracy (TP/FP/FN/TN). |
 | `6_eln_risk_group_generation` | Merges model predictions with clinical data and writes input CSVs to `r_input/` for each label-replacement mode. Also writes `eln_run_config.R` at the project root. |
 | `7_modify_eln_risk_groups.R` | **Run manually** after `6_generation`. Applies ELN 2022 classification logic and writes results to `r_output/`. |
-| `6_eln_risk_group_analysis` | Reads R output from `r_output/` and produces Kaplan-Meier curves, Sankey patient-flow diagrams, and VAF plots. |
-| `8_vaf_analysis` | Compares variant allele frequencies between true-positive and false-negative predictions. |
+| `8_eln_risk_group_analysis` | Reads R output from `r_output/`. Tabulates the label-replacement modes (C-index with paired bootstrap CIs, agreement with the true-label groups), then Kaplan-Meier curves, Sankey diagrams, driver bar plots and VAF plots for the chosen configuration. `USE_TOY_DATA` tests it without patient data. |
+| `9_vaf_analysis` | Exploratory comparison of variant allele frequencies between true-positive and false-negative predictions (the manuscript version is `scripts/extract_vaf_by_outcome.py` + S13 of the V2 notebook). |
 | `10_FAB_analysis` | Associates FAB morphotype classes with mutation predictions. |
 | `11_cytomorphology_analysis` | Full cytomorphology analysis: cell differentials, morphometry, attention scores, UMAP, oncoprint. |
 
@@ -196,6 +196,7 @@ python 4_import_predictions.py        # extracts zip into data/{V}/model_predict
 | 4 | `scripts/extract_morphometry_dysplasia_correlation.py` | `morph_dysplasia/` | morphometry of dysplastic cells (supplement) |
 | 5 | `scripts/extract_gallery_cells.py` (~3 min; `--skip-top` reuses the top cells) | `gallery/`: top cells of all card targets, clusters + 2D embedding, Fig 6 tiles; also the cell lists for step 6 | Fig 6, variable cards (S7), TP/FP pages (S8), embedding scatter (S6) |
 | 6 | `scripts/extract_cell_crops.py data/<version>/derived/cell_crops/lists/*.csv` | `cell_crops/` (cached cell images) | everything that shows cell images |
+| 7 | `scripts/extract_vaf_by_outcome.py` (needs the VAF tables of `config.py`) | `error_analysis/vaf_by_outcome.csv`, `vaf_outcome_stats.csv` | VAF of TP vs FN (S13) |
 
 3. **Cell images (step 6)** need the image server on `localhost:5432` and the NAS. The figure code writes the cell lists, so the first time: run the notebook once, fetch the crops, run the notebook again. Cells without an image are drawn as stand-ins. Cells whose window leaves the field and samples with unreadable images are skipped, so the selection is stable; failed fetches are listed in `cell_crops/missing.csv`.
 4. **Run the notebook** top to bottom. Sections with missing inputs print a message instead of a figure.

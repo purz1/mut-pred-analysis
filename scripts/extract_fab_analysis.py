@@ -10,14 +10,15 @@ Coverage: samples with and without FAB compared by database (year) and by target
 
     .venv/bin/python scripts/extract_fab_analysis.py
 Writes data/<DATA_VERSION_IDENTIFIER>/derived/fab/: fab_composition.csv, fab_target_prevalence.csv, fab_coverage.csv, fab_performance.csv,
-fab_errors.csv, fab_contrast.csv, fab_outcomes.csv (TP / FN / FP / TN per FAB class).
+fab_errors.csv, fab_contrast.csv, fab_outcomes.csv (TP / FN / FP / TN per FAB class), fab_scores.csv (model probability per sample of the FAB_TARGETS, no identifiers)
+and fab_score_contrast.csv (Mann–Whitney M0–M2 vs M4–M5 of the probability among true positives and true negatives, BH-FDR across the FAB_TARGETS).
 """
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.stats import beta, fisher_exact
+from scipy.stats import beta, fisher_exact, mannwhitneyu
 from sklearn.metrics import average_precision_score, roc_auc_score
 from statsmodels.stats.multitest import multipletests
 
@@ -59,7 +60,7 @@ def main():
     fab = pd.read_csv(FAB_DATA_PATH, dtype={"fab": str})[["subject_id", "fab"]].dropna()
     assert fab.subject_id.is_unique, "a patient has several FAB values"
     rng = np.random.default_rng(0)
-    comp, prev, cov, perf, err, con, outc = [], [], [], [], [], [], []
+    comp, prev, cov, perf, err, con, outc, scores = [], [], [], [], [], [], [], []
 
     for model, run in RUNS.items():
         pred = pd.read_csv(REPO / run / "predictions.csv")
@@ -101,6 +102,9 @@ def main():
                 oc = g[f"{v}_true_label"].astype(int).astype(str) + g[f"{v}_pred_label"].astype(int).astype(str)
                 outc.append(dict(model=model, variable=v, fab=c, TP=int((oc == "11").sum()), FN=int((oc == "10").sum()),
                                  FP=int((oc == "01").sum()), TN=int((oc == "00").sum())))
+            if v in FAB_TARGETS:  # model score per FAB group (no identifiers)
+                sc = x.dropna(subset=["group"])[["group", y, p]].rename(columns={y: "true", p: "prob"})
+                scores.append(sc.assign(model=model, variable=v, true=sc.true.astype(int)))
             prev += [dict(model=model, variable=v, level="class", group=c, n=len(g), n_pos=int((g[y] == 1).sum()), prevalence=(g[y] == 1).mean())
                      for c, g in x.dropna(subset=["fab"]).groupby("fab")]
             # contrast of the two main groups
@@ -123,9 +127,22 @@ def main():
         if len(ok):
             con.loc[ok, "padj"] = multipletests(con.loc[ok, "p"], method="fdr_bh")[1]
 
+    scores = pd.concat(scores, ignore_index=True)
+    sc_con = []
+    for (model, v, t), g in scores.groupby(["model", "variable", "true"]):
+        a, b = (g.loc[g.group == c, "prob"] for c in CONTRAST)
+        sc_con.append(dict(model=model, variable=v, true=t, n_a=len(a), n_b=len(b),
+                           p=mannwhitneyu(a, b).pvalue if min(len(a), len(b)) >= 3 else np.nan))
+    sc_con = pd.DataFrame(sc_con)
+    sc_con["padj"] = np.nan  # BH across FAB_TARGETS within model and class
+    for _, idx in sc_con.groupby(["model", "true"]).groups.items():
+        ok = sc_con.loc[idx, "p"].dropna().index
+        if len(ok):
+            sc_con.loc[ok, "padj"] = multipletests(sc_con.loc[ok, "p"], method="fdr_bh")[1]
+
     OUT.mkdir(parents=True, exist_ok=True)
     for name, rows in (("fab_composition", comp), ("fab_target_prevalence", prev), ("fab_coverage", cov),
-                       ("fab_performance", perf), ("fab_errors", err), ("fab_contrast", con), ("fab_outcomes", outc)):
+                       ("fab_performance", perf), ("fab_errors", err), ("fab_contrast", con), ("fab_outcomes", outc), ("fab_scores", scores), ("fab_score_contrast", sc_con)):
         pd.DataFrame(rows).to_csv(OUT / f"{name}.csv", index=False)
     print(f"Written to {OUT}")
 

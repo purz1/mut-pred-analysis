@@ -1,8 +1,8 @@
 """FAB supplements: composition and positive controls, model performance and errors per FAB group, fingerprint per FAB group.
 
 fab_composition()                 FAB class counts (with missing) and prevalence of every target per class (positive controls: PML-RARA in M3 …)
-fab_variable(variable)            one target: prevalence and outcomes per FAB class, miss and false-alarm rates per FAB group for BM, PB and
-                                  FUSION and, where both groups have enough positives, the target's fingerprint within M0–M2 and M4–M5
+fab_variable(variable)            one target: prevalence and outcomes per FAB class, the model probability of true positives and true negatives per FAB
+                                  group and, where both groups have enough positives, the target's fingerprint within M0–M2 and M4–M5
 Inputs: derived/fab (scripts/extract_fab_analysis.py, extract_fab_features.py).
 """
 from functools import cache
@@ -71,12 +71,11 @@ def fab_composition(model="BM"):
 
 
 OUTCOME_COL = {"TP": "#8b1a1a", "FN": "#f39c34", "FP": "#d62728", "TN": "#3a6fb0"}
-MODEL_MARK = {"BM": "o", "PB": "s", "FUSION": "^"}
 MIN_FEATURES = 20  # fingerprint panels need this many features with a δ in both groups
 
 
 def fab_variable(variable, n_top=10, modality="BM"):
-    prev, outc, err, con = (_t(n) for n in ("fab_target_prevalence", "fab_outcomes", "fab_errors", "fab_contrast"))
+    prev, outc = (_t(n) for n in ("fab_target_prevalence", "fab_outcomes"))
     prev = prev[(prev.variable == variable) & (prev.level == "class") & (prev.model == modality)].set_index("group").reindex(CLASSES)
     eff = _t("fab_feature_effects")
     a, b = (f"delta_{g}" for g in CONTRAST)
@@ -101,23 +100,26 @@ def fab_variable(variable, n_top=10, modality="BM"):
         ax.set_xticks(range(6), CLASSES); ax.set_ylabel("Samples"); ax.set_title(f"Outcomes ({modality} model)", fontsize=5.5)
         ax.set_ylim(0, max(bottom.max(), 1) * 1.25)
         ax.legend(fontsize=4.5, frameon=False, ncol=4, loc="upper left", columnspacing=0.8, handlelength=1)
-        for k, (kind, title, xmax) in enumerate((("miss", "Miss rate (FN / positives)", 1.02), ("false_alarm", "False-alarm rate (FP / negatives)", 0.6))):
+        sc, scc = _t("fab_scores"), _t("fab_score_contrast")
+        sc = sc[(sc.variable == variable) & (sc.model == modality)]
+        scc = scc[(scc.variable == variable) & (scc.model == modality)].set_index("true")
+        rng = np.random.default_rng(0)
+        for k, (true, title) in enumerate(((1, "Model score, true positives"), (0, "Model score, true negatives"))):
             ax = fig.add_subplot(gs[2 + k])
-            for gi, g in enumerate(GROUPS):
-                for mi, (m, mark) in enumerate(MODEL_MARK.items()):
-                    r = err[(err.variable == variable) & (err.kind == kind) & (err.group == g) & (err.model == m)]
-                    if len(r) and r.n.iat[0] > 0:
-                        y = gi + (mi - 1) * 0.2
-                        r = r.iloc[0]
-                        ax.plot([r.low, r.high], [y, y], color=GROUP_COL[g], lw=0.7)
-                        ax.scatter(r.rate, y, s=8, marker=mark, color=GROUP_COL[g], zorder=3, lw=0)
-            c = con[(con.variable == variable) & (con.kind == kind) & (con.model == modality)]
-            if len(c) and pd.notna(c.padj.iat[0]):
-                ax.text(0.98, 0.02, f"{CONTRAST[0]} vs {CONTRAST[1]} ({modality}): " + _p(c.padj.iat[0]), transform=ax.transAxes, ha="right", va="bottom", fontsize=4.3)
-            ax.set_yticks(range(3), GROUPS if k == 0 else [""] * 3); ax.set_ylim(2.6, -0.6); ax.set_xlim(-0.02, xmax)
-            ax.set_xlabel(title, fontsize=5); ax.grid(axis="y", lw=0.2, color="0.85"); ax.spines[["top", "right"]].set_visible(False)
-        handles = [plt.Line2D([], [], marker=mk, color="0.3", lw=0, ms=3, label=m) for m, mk in MODEL_MARK.items()]
-        fig.legend(handles=handles, loc="upper right", ncol=3, frameon=False, bbox_to_anchor=(0.98, 1.0), fontsize=5)
+            present = [g for g in GROUPS if ((sc.true == true) & (sc.group == g)).any()]
+            ys = [sc.loc[(sc.true == true) & (sc.group == g), "prob"].to_numpy() for g in present]
+            bp = ax.boxplot(ys, positions=range(len(present)), widths=0.6, whis=0, showfliers=False, showcaps=False, patch_artist=True,
+                            medianprops=dict(color="k", lw=1.2), whiskerprops=dict(lw=0))
+            for bx, g in zip(bp["boxes"], present):
+                bx.set(facecolor=GROUP_COL[g], alpha=0.35, lw=0.4)
+            for x, y in enumerate(ys):
+                ax.scatter(x + rng.uniform(-0.2, 0.2, len(y)), y, s=3, color=".3", lw=0, zorder=3)
+            ax.set_xticks(range(len(present)), [f"{g}\n(n={len(y)})" for g, y in zip(present, ys)], fontsize=4.8)
+            ax.set_ylim(-0.02, 1.12); ax.set_title(title, fontsize=5.5); ax.spines[["top", "right"]].set_visible(False)
+            if k == 0:
+                ax.set_ylabel(f"Predicted probability ({modality})")
+            if true in scc.index and pd.notna(scc.padj[true]) and all(g in present for g in CONTRAST):
+                ax.text(0.5, 1.0, _p(scc.padj[true]), transform=ax.transAxes, ha="center", va="bottom", fontsize=5)
         fig.text(0.06, 1 - 2 / H, vname(variable), fontsize=7, fontweight="bold", color=vcol(variable), va="center")
         if fingerprint:
             eff["label"] = eff.cell_type.fillna("").str.replace("_", " ") + " – " + eff.feature.fillna(eff.feature_col).str.replace("_", " ")

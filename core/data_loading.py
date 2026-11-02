@@ -28,15 +28,18 @@ FILES = {
                h5="features_no-quality-filter_aml_dg_de-novo-and-secondary_bm_07-04-2026.h5",
                parquet="cell_level_features_aml_dg_de-novo-and-secondary_bm_07-04-2026.parquet",
                cup="cup_blasts_features_no-quality-filter_aml_dg_de-novo-and-secondary_bm_07-04-2026.csv",
+               cup_cells="cup_blasts_cells_no-quality-filter_aml_dg_de-novo-and-secondary_bm_07-04-2026.parquet",
                run=BM_RUN_PATH),
     "PB": dict(labels="labels_aml_dg_de-novo-and-secondary_pb_07-04-2026.xlsx",
                features="aggregated_features_aml_dg_de-novo-and-secondary_pb_07-04-2026.csv",
                h5="features_no-quality-filter_aml_dg_de-novo-and-secondary_pb_07-04-2026.h5",
                parquet="cell_level_features_aml_dg_de-novo-and-secondary_pb_07-04-2026.parquet",
                cup="cup_blasts_features_no-quality-filter_aml_dg_de-novo-and-secondary_pb_07-04-2026.csv",
+               cup_cells="cup_blasts_cells_no-quality-filter_aml_dg_de-novo-and-secondary_pb_07-04-2026.parquet",
                run=PB_RUN_PATH),
 }
 LABEL_MAP_FILE = "label-map_aml_dg_de-novo-and-secondary_07-04-2026.json"
+CUP_THRESHOLD = 0.44  # as in hematoscope-research v3_score_cup_blasts.py
 
 # ── feature lists (as in the notebook constants) ────────────────────────────
 CELL_DIFF_BM = [
@@ -132,6 +135,14 @@ def load_cup_features(modality):
     """Blasts-cup_proportion per sample (hematoscope-research v3_score_cup_blasts.py, threshold 0.44)."""
     cup = pd.read_csv(FEAT_DIR / FILES[modality]["cup"], dtype={"database_id": str, "album_id": str})
     return cup[["database_id", "album_id", "Blasts-cup_proportion"]]
+
+
+def add_cup_flag(cell_df, modality):
+    """Cell-level parquet + `cup` (blast scored > CUP_THRESHOLD); the low_quality gate is applied in the aggregation."""
+    cup = pd.read_parquet(FEAT_DIR / FILES[modality]["cup_cells"], columns=["database_id", "album_id", "cell_id", "cup_blasts_prob"])
+    cell_df = cell_df.merge(cup, on=["database_id", "album_id", "cell_id"], how="left")
+    cell_df["cup"] = cell_df.pop("cup_blasts_prob") > CUP_THRESHOLD
+    return cell_df
 
 
 def load_cohort(modality, variables=SELECTED_VARIABLES):

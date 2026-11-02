@@ -39,7 +39,8 @@ sys.path.insert(0, str(REPO))
 
 from config import DATA_VERSION_IDENTIFIER  # noqa: E402
 from core.data_loading import (  # noqa: E402
-    FAMILY, FEAT_DIR, FILES, RUN_PATHS, SELECTED_VARIABLES, STAT_SUFFIXES, feature_lists, load_cohort, preprocess,
+    FAMILY, FEAT_DIR, FILES, RUN_PATHS, SELECTED_VARIABLES, STAT_SUFFIXES, add_cup_flag, feature_lists, load_cohort,
+    preprocess,
 )
 from core.attention import compute_logR_summary, effective_num_cells, select_top_attention_cell_ids  # noqa: E402
 from core.cell_feature_aggregation.aggregate import aggregate_bm_dataset, aggregate_pb_dataset  # noqa: E402
@@ -162,6 +163,7 @@ def main():
         cell_df = pd.read_parquet(FEAT_DIR / FILES[modality]["parquet"])
         cell_df["database_id"] = cell_df["database_id"].astype(str)
         cell_df["album_id"] = cell_df["album_id"].astype(str)
+        cell_df = add_cup_flag(cell_df, modality)
         agg_fn = aggregate_bm_dataset if modality == "BM" else aggregate_pb_dataset
 
         print(f"[{modality}] aggregating all cells per sample …")

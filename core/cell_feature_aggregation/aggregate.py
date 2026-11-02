@@ -228,6 +228,12 @@ def aggregate_bm_sample(
         n_dysplastic = int((lq_non_mitotic_erythro & is_dysplastic).sum())
         result["Erythroblasts-overall_dysplasia_proportion"] = _min_division(n_dysplastic, n_denom, minimum)
 
+        # Cup-shaped blasts (if `cup` was added, core.data_loading.add_cup_flag) — lq-filtered numerator
+        if "cup" in cell_df:
+            blast_mask = cell_df["class_label"] == "Blasts"
+            n_res = int((blast_mask & lq & cell_df["cup"]).sum())
+            result["Blasts-cup_proportion"] = _min_division(n_res, int(blast_mask.sum()), minimum)
+
     elif filter_type == "all":
         parts = [
             aggregate_bm_sample(cell_df, "cell_differential", minimum, minimum_megas),
@@ -358,6 +364,12 @@ def aggregate_pb_sample(
             for res in PB_MACROP_RESULTS:
                 n_res = int((mask & lq & cell_df[res]).sum())
                 result[f"{cls_name}-{res}_proportion"] = _min_division(n_res, n_cls, minimum)
+
+        # Cup-shaped blasts (if `cup` was added, core.data_loading.add_cup_flag) — lq-filtered numerator
+        if "cup" in cell_df:
+            blast_mask = cell_df["class_label"] == "Blasts"
+            n_res = int((blast_mask & lq & cell_df["cup"]).sum())
+            result["Blasts-cup_proportion"] = _min_division(n_res, int(blast_mask.sum()), minimum)
 
     elif filter_type == "all":
         parts = [

@@ -13,7 +13,8 @@ model focus (dot in Fig 4/5: further enriched in the top-attention cells), one f
 in Pos), panels BM then PB in lineage order, with a strip of example cells (4 typical top-attention cells of Pos samples +
 1 striking cell, cells.py) with morphometry sliders; long cards continue on a second page. Morphometry = the Fig 4/5 E measures.
 CARDS[target] = {"extra": [frame, ...]} adds hand-picked frames (e.g. a single associated feature that completes the story),
-{"frames": [...]} replaces B; frame = {"panels": [(mod, col), ...]}. make(target) returns the list of pages.
+{"frames": [...]} replaces B; frame = {"panels": [(mod, col), ...]}; default frames whose panels are all in an extra frame are
+dropped. make(target) returns the list of pages.
 """
 from functools import cache
 
@@ -41,7 +42,9 @@ MAX_FRAMES, MAX_PANELS = 8, 4
 # are covered by IDH mutations, FLT3 mutations, NPM1 and complex karyotype
 CARD_VARS = ["PML-RARA", "CBFB-MYH11", "RUNX1-RUNX1T1_OR_t_8_21", "IDH_mutations", "CpG_mutations", "NPM1",
              "FLT3_mutations", "KIT", "RTK_RAS_mutations", "complex_karyotype", "monosomy5_del_5q", "TP53", "STAG2"]
-CARDS = {}  # target -> {"extra": [frame, ...]} and / or {"frames": [frame, ...]} (replaces frames())
+CARDS = {  # target -> {"extra": [frame, ...]} and / or {"frames": [frame, ...]} (replaces frames())
+    "NPM1": {"extra": [{"panels": [("BM", "Blasts-cup_proportion"), ("PB", "Blasts-cup_proportion")]}]},  # cup-shaped blasts
+}
 
 
 # ── data ─────────────────────────────────────────────────────────────────────
@@ -270,7 +273,9 @@ def make(var):
     B = the associated dysplasia / morphometry features that are model focus (frames()), one frame per measure × direction:
     box plots (all panels of the frame) + a strip of example cells with sliders (cells.py)."""
     spec = CARDS.get(var, {})
-    blocks = _select(var, spec.get("frames", frames(var)) + spec.get("extra", []))
+    extra = spec.get("extra", [])
+    shown = {p for f in extra for p in f["panels"]}
+    blocks = _select(var, [f for f in spec.get("frames", frames(var)) if not set(f["panels"]) <= shown] + extra)
     sel = [(r.modality, cell.to_frame().T) for _, strip in blocks for cell, r, *_ in strip]
     if sel:
         cells.write_list(sel, f"card_{var}")

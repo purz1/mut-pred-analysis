@@ -21,7 +21,7 @@ import pyarrow.parquet as pq
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Ellipse
 
-from core.data_loading import FEAT_DIR, FILES, load_cohort
+from core.data_loading import FEAT_DIR, FILES, add_cup_flag, load_cohort
 from . import config as C, errors
 from .crops import usable
 from .fig4 import STATS, effects
@@ -34,15 +34,15 @@ SLIDER_NAME = {"entire_area": "area", "nucleus_area": "nucl.", "entire_N:C-ratio
                "nucleus_solidity": "solid.", "nucleus_eccentricity": "eccen."}
 DYS_COL = {"bilobed": "apl_bilobed", "hypergranulated": "apl_hypergranulated", "auer": "apl_auer",
            "vacuolated": "vacuolated", "asynchrony": "mds_asynchrony", "dysmorphic": "mds_dysmorphic",
-           "multinucleated": "mds_multinucleated", "hypolobated": "mgk_hypolobated"}
+           "multinucleated": "mds_multinucleated", "hypolobated": "mgk_hypolobated", "cup": "cup"}
 TAG = {"apl_bilobed": "bilobed", "apl_hypergranulated": "hypergran.", "apl_auer": "Auer", "vacuolated": "vacuol.",
        "mds_asynchrony": "asynchr.", "mds_dysmorphic": "dysmorph.", "mds_multinucleated": "multinucl.",
-       "mgk_hypolobated": "hypolob."}
+       "mgk_hypolobated": "hypolob.", "cup": "cup"}
 CLASS_GROUP = {"Myeloid_precursors": ["Blasts", "Promyelocytes", "Myelocytes"]}
 # dysplasia category colours as fig4.DYS_COL (11_cytomorphology_analysis.ipynb balloon plots)
 CHIP_COL = {"apl_bilobed": "#f8d097", "apl_hypergranulated": "#f8d097", "apl_auer": "#f8d097", "vacuolated": "#f9d7c9",
             "mds_asynchrony": "#b6a0bc", "mds_dysmorphic": "#b6a0bc", "mds_multinucleated": "#b6a0bc",
-            "mgk_hypolobated": "#abc2ca"}
+            "mgk_hypolobated": "#abc2ca", "cup": "#f8d097"}
 
 
 # ── data ─────────────────────────────────────────────────────────────────────
@@ -53,13 +53,15 @@ def _cohort(mod):
 
 @cache
 def cell_table(mod):
-    """All cells of the cell-level parquet (ids as str): class, low-quality score, morphometry (areas in µm²), flags."""
+    """All cells of the cell-level parquet (ids as str): class, low-quality score, morphometry (areas in µm²), flags
+    (cup from the cup_blasts sidecar, core.data_loading.add_cup_flag)."""
     f = FEAT_DIR / FILES[mod]["parquet"]
     have = set(pq.read_schema(f).names)
     c = pd.read_parquet(f, columns=KEY + ["class_label", "low_quality"] + MEASURES + [t for t in TAG if t in have])
     c = c.astype({**{m: float for m in MEASURES}, "database_id": str, "album_id": str, "cell_id": "int64"})
     for m in MEASURES:  # px → µm² for areas (config.UM_PER_PX)
         c[m] *= C.to_um(m, mod)[0]
+    c = add_cup_flag(c, mod)
     return c.assign(key=c.database_id + "/" + c.album_id + "/" + c.cell_id.astype(str))
 
 

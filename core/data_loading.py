@@ -27,11 +27,13 @@ FILES = {
                features="aggregated_features_aml_dg_de-novo-and-secondary_bm_07-04-2026.csv",
                h5="features_no-quality-filter_aml_dg_de-novo-and-secondary_bm_07-04-2026.h5",
                parquet="cell_level_features_aml_dg_de-novo-and-secondary_bm_07-04-2026.parquet",
+               cup="cup_blasts_features_no-quality-filter_aml_dg_de-novo-and-secondary_bm_07-04-2026.csv",
                run=BM_RUN_PATH),
     "PB": dict(labels="labels_aml_dg_de-novo-and-secondary_pb_07-04-2026.xlsx",
                features="aggregated_features_aml_dg_de-novo-and-secondary_pb_07-04-2026.csv",
                h5="features_no-quality-filter_aml_dg_de-novo-and-secondary_pb_07-04-2026.h5",
                parquet="cell_level_features_aml_dg_de-novo-and-secondary_pb_07-04-2026.parquet",
+               cup="cup_blasts_features_no-quality-filter_aml_dg_de-novo-and-secondary_pb_07-04-2026.csv",
                run=PB_RUN_PATH),
 }
 LABEL_MAP_FILE = "label-map_aml_dg_de-novo-and-secondary_07-04-2026.json"
@@ -55,12 +57,12 @@ DYSPLASIA_BM = [
     "Megakaryocytes_hypolobated_proportion", "Megakaryocytes-vacuolated_proportion", "Blasts-vacuolated_proportion",
     "Erythroblasts-vacuolated_proportion", "Promyelocytes-vacuolated_proportion", "Myelocytes-vacuolated_proportion",
     "Basophils-vacuolated_proportion", "Neutrophils-vacuolated_proportion", "Eosinophils-vacuolated_proportion",
-    "Lymphocytes-vacuolated_proportion", "Plasma_cells-vacuolated_proportion",
+    "Lymphocytes-vacuolated_proportion", "Plasma_cells-vacuolated_proportion", "Blasts-cup_proportion",
 ]
 DYSPLASIA_PB = [
     "APL-apl_hypergranulated_proportion", "Blasts-apl_hypergranulated_proportion",
     "Myelocytes-apl_hypergranulated_proportion", "Neutrophils-neut_gran_normal_proportion",
-    "Neutrophils-neut_gran_hypo_proportion", "Neutrophils-neut_gran_hyper_proportion",
+    "Neutrophils-neut_gran_hypo_proportion", "Neutrophils-neut_gran_hyper_proportion", "Blasts-cup_proportion",
 ]
 CELL_STAT_REGEX = ("entire_area_median|N:C-ratio_median|entire_compactness_median|nucleus_area_median"
                    "|nucleus_solidity_median|nucleus_eccentricity_median|nucleus_compactness_median")
@@ -126,12 +128,19 @@ def load_labels(modality, variables=SELECTED_VARIABLES):
     return labels
 
 
+def load_cup_features(modality):
+    """Blasts-cup_proportion per sample (hematoscope-research v3_score_cup_blasts.py, threshold 0.44)."""
+    cup = pd.read_csv(FEAT_DIR / FILES[modality]["cup"], dtype={"database_id": str, "album_id": str})
+    return cup[["database_id", "album_id", "Blasts-cup_proportion"]]
+
+
 def load_cohort(modality, variables=SELECTED_VARIABLES):
     """Labels + sample-level features for samples used in modelling (= notebook df_bm / df_pb)."""
     fl = FILES[modality]
     labels = load_labels(modality, variables)
     preds = pd.read_csv(REPO / fl["run"] / "predictions.csv", usecols=["album_id", "database_id"])
-    features = preprocess(pd.read_csv(FEAT_DIR / fl["features"]), modality)
+    features = pd.read_csv(FEAT_DIR / fl["features"], dtype={"database_id": str, "album_id": str})
+    features = preprocess(features.merge(load_cup_features(modality), how="left"), modality)
     in_model = load_obs_from_h5(FEAT_DIR / fl["h5"])
     for d in (labels, preds, features, in_model):
         d["database_id"] = d["database_id"].astype(str)

@@ -30,7 +30,7 @@ DYS_CT = {"Myeloid_precursors": "Myel. prec.", "Erythroblasts": "Erythrobl.", "P
 DYS_COL = {"Myeloid_precursors_hypergranulated_proportion": "#f8d097", "Myeloid_precursors_bilobed_proportion": "#f8d097",
            "Myeloid_precursors_auer_proportion": "#f8d097",
            "APL-apl_hypergranulated_proportion": "#f8d097", "Blasts-apl_hypergranulated_proportion": "#f8d097",
-           "Myelocytes-apl_hypergranulated_proportion": "#f8d097",
+           "Myelocytes-apl_hypergranulated_proportion": "#f8d097", "Blasts-cup_proportion": "#f8d097",
            "Erythroblasts_asynchrony_proportion": "#b6a0bc", "Erythroblasts_dysmorphic_proportion": "#b6a0bc",
            "Erythroblasts_multinucleated_proportion": "#b6a0bc",
            "Megakaryocytes_multinucleated_proportion": "#abc2ca", "Megakaryocytes_hypolobated_proportion": "#abc2ca",

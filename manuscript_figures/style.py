@@ -47,7 +47,8 @@ MORPH_CT = {"BM": ["Myeloid_precursors", "Blasts", "Proerythroblasts", "Erythrob
 FEAT_NAME = {"hypergranulated": "hypergranular", "bilobed": "bilobed nucleus", "auer": "Auer rods",
              "vacuolated": "vacuolated", "asynchrony": "N:C asynchrony", "dysmorphic": "dysmorphic",
              "multinucleated": "separated nuclei", "hypolobated": "hypolobated nuclei", "apl_hypergranulated": "hypergranular",
-             "neut_gran_normal": "normal granularity", "neut_gran_hypo": "hypogranular", "neut_gran_hyper": "hypergranular"}
+             "neut_gran_normal": "normal granularity", "neut_gran_hypo": "hypogranular", "neut_gran_hyper": "hypergranular",
+             "cup": "cup-shaped nucleus"}
 
 GROUP_COL = {"Neg": "#5b8cc0", "Pos": "#f0b08a", "Pos top": "#b2182b"}  # Neg / Pos / top-attention cells of Pos samples
 OUTS = ["TN", "FN", "FP", "TP"]
